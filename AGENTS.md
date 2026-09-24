@@ -47,6 +47,40 @@ node --check app.js && node --check prayer-times.js
 - Bila menambah aturan `grid-column`/`grid-row` di satu breakpoint, batalkan di breakpoint yang
   lebih kecil, jika tidak akan muncul kolom implisit yang menghimpit kolom lain.
 
+## Susunan UI/UX (perombakan menyeluruh)
+
+Titik temu DOM yang dipakai `app.js`:
+
+- Rel waktu: `[data-cards]` berisi `li.stop[data-card="fajr|dhuhr|asr|maghrib|isha"]`, di dalamnya
+  `[data-card-name]`, `[data-card-time]`, `[data-card-state]`, `[data-card-ar]`, `[data-card-fill]`.
+  Kunci hentian memakai nama `fajr` (bukan `subuh`).
+- Panel fokus: `[data-next-name]`, `[data-next-time]`, `[data-next-at]`, `[data-next-ar]`,
+  `[data-next-count]`, `[data-next-status]`.
+- Jam: `[data-clock]`, `[data-clock-sec]`, `[data-clock-big]`, `[data-clock-ampm]`,
+  `[data-clockface-zone]`. Sufiks AM/PM berada di `[data-clock-ampm]`/`[data-clockface-zone]`,
+  bukan di dalam `[data-clock-big]`.
+- Pengaturan berkunci tab memakai `[data-tab]` + `[data-pane]`; pemilih nuansa `[data-theme-pick]`
+  (`role="radio"`, dipilih ditandai `aria-checked="true"`). Daftar `<option>` tema ada di
+  `<select data-in="theme">` yang tersembunyi — jangan dikosongkan, kalau tidak tema tersimpan hilang.
+- Beberapa breakpoint berbeda sumbu: fokus menjadi satu kolom di bawah 980px, panel samping
+  menumpuk di bawah rel pada 1200px. Uji tata letak harus memakai ambang yang sama per properti.
+
+## Kontras dan warna teks
+
+- Pakai `--ink-gold` untuk teks berwarna emas, dan `--gold-1/2/3` hanya untuk gradien/dekorasi.
+  Tema fajar butuh `--ink-gold` yang jauh lebih gelap agar lolos 4,5:1.
+- Jangan meredupkan kartu lewat `opacity` pada elemen; itu menurunkan kontras teks. Redupkan
+  dengan mengganti warna teks ke `--txt-2`/`--txt-3`.
+- `--txt-2`/`--txt-3` sudah dinaikkan agar teks kecil lolos 4,5:1 di ketiga tema; menurunkannya
+  kembali akan menggagalkan uji kontras.
+
+## Uji yang dipakai saat perombakan (di luar repo, di `/tmp`)
+
+Tidak ikut masuk repositori, tetapi berguna bila dijalankan lagi di lingkungan yang sama:
+`uiux_test.py`, `regress_test.py`, `bg_test.py`, `layout_test.py`, `contrast_test.py`,
+`geom_test.py`, `city_test.py`, ditambah pembantu `cdp.py`. Semuanya memakai Chrome DevTools
+Protocol dan mengharapkan server di `http://localhost:8000`.
+
 ## Referensi ketelitian hisab
 
 Hasil sudah dicocokkan dengan `api.aladhan.com` (mis. `?method=20` untuk Kemenag) dan cocok persis
