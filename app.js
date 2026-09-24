@@ -721,6 +721,8 @@
 
     var on = state.settings.galleryOn && galleryItems().length > 0;
     layer.hidden = !on;
+    // Dipakai CSS untuk melunakkan vignette saat foto tampil.
+    document.documentElement.setAttribute('data-photo', on ? 'on' : 'off');
     var scrim = $('.atmos__scrim');
     if (scrim) scrim.hidden = !on;
     var bar = $('[data-gallery-bar]');

@@ -1,19 +1,20 @@
 /* ==========================================================================
    Jadwal Sholat Masjid — "Mihrab" dashboard
-   Nuansa: malam indigo, filigri girih, bingkai kuningan.
+   Nuansa: malam indigo, foto masjid, bingkai kuningan.
    ========================================================================== */
 
 /* ------------------------------- token & tema ------------------------------ */
 /* Nilai warna sesungguhnya ditetapkan per tema di bawah (html[data-theme]). */
 
 html[data-theme="night"] {
-  --scrim-a: rgba(3, 6, 14, .86);
-  --scrim-b: rgba(5, 8, 15, .94);
+  --scrim-a: rgba(3, 6, 14, .42);
+  --scrim-b: rgba(5, 8, 15, .68);
   --bg-0: #05080f;
   --bg-1: #0a1020;
   --bg-2: #101a33;
   --bg-3: #16224a;
-  --panel: rgba(14, 22, 46, .62);
+  --panel-rgb: 14, 22, 46;
+  --panel: rgba(var(--panel-rgb), .62);
   --panel-solid: #0c1428;
   --line: rgba(201, 162, 74, .22);
   --line-soft: rgba(201, 162, 74, .11);
@@ -28,20 +29,20 @@ html[data-theme="night"] {
   --accent-soft: rgba(100, 182, 168, .14);
   --live: #e8834a;
   --shadow: 0 26px 60px -28px rgba(0, 0, 0, .9);
-  --lattice-op: .5;
   --aurora: radial-gradient(120% 80% at 50% -10%, rgba(72, 96, 190, .34), transparent 62%),
             radial-gradient(80% 60% at 12% 8%, rgba(201, 162, 74, .12), transparent 60%),
             radial-gradient(90% 70% at 92% 22%, rgba(100, 182, 168, .10), transparent 60%);
 }
 
 html[data-theme="dawn"] {
-  --scrim-a: rgba(252, 247, 238, .88);
-  --scrim-b: rgba(247, 241, 230, .95);
+  --scrim-a: rgba(252, 247, 238, .46);
+  --scrim-b: rgba(247, 241, 230, .74);
   --bg-0: #f7f1e6;
   --bg-1: #fdf8ef;
   --bg-2: #f3e7d4;
   --bg-3: #eadcc4;
-  --panel: rgba(255, 252, 245, .74);
+  --panel-rgb: 255, 252, 245;
+  --panel: rgba(var(--panel-rgb), .74);
   --panel-solid: #fffaf1;
   --line: rgba(146, 106, 42, .26);
   --line-soft: rgba(146, 106, 42, .14);
@@ -56,20 +57,20 @@ html[data-theme="dawn"] {
   --accent-soft: rgba(47, 125, 109, .12);
   --live: #c2542a;
   --shadow: 0 24px 50px -30px rgba(90, 62, 22, .5);
-  --lattice-op: .34;
   --aurora: radial-gradient(120% 80% at 50% -10%, rgba(240, 200, 130, .5), transparent 62%),
             radial-gradient(80% 60% at 10% 6%, rgba(169, 118, 42, .14), transparent 60%),
             radial-gradient(90% 70% at 92% 20%, rgba(47, 125, 109, .10), transparent 60%);
 }
 
 html[data-theme="emerald"] {
-  --scrim-a: rgba(2, 10, 8, .86);
-  --scrim-b: rgba(4, 18, 14, .94);
+  --scrim-a: rgba(2, 10, 8, .42);
+  --scrim-b: rgba(4, 18, 14, .68);
   --bg-0: #04120e;
   --bg-1: #061a15;
   --bg-2: #0a2620;
   --bg-3: #0f3329;
-  --panel: rgba(8, 32, 26, .62);
+  --panel-rgb: 8, 32, 26;
+  --panel: rgba(var(--panel-rgb), .62);
   --panel-solid: #07211a;
   --line: rgba(200, 168, 90, .24);
   --line-soft: rgba(200, 168, 90, .12);
@@ -84,7 +85,6 @@ html[data-theme="emerald"] {
   --accent-soft: rgba(127, 201, 166, .14);
   --live: #e0975a;
   --shadow: 0 26px 60px -28px rgba(0, 0, 0, .9);
-  --lattice-op: .5;
   --aurora: radial-gradient(120% 80% at 50% -10%, rgba(30, 120, 96, .34), transparent 62%),
             radial-gradient(80% 60% at 12% 8%, rgba(200, 168, 90, .12), transparent 60%),
             radial-gradient(90% 70% at 92% 22%, rgba(127, 201, 166, .10), transparent 60%);
@@ -149,12 +149,6 @@ table { border-collapse: collapse; }
 /* ------------------------------- lapisan latar ------------------------------ */
 .atmos { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 
-.atmos__lattice {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  color: var(--gold-1);
-  opacity: var(--lattice-op);
-}
-
 .atmos__aurora { position: absolute; inset: 0; background: var(--aurora); }
 
 .atmos__grain {
@@ -171,6 +165,13 @@ table { border-collapse: collapse; }
 }
 html[data-theme="dawn"] .atmos__vignette {
   background: radial-gradient(130% 100% at 50% 40%, transparent 48%, rgba(120, 88, 40, .16) 100%);
+}
+/* Saat foto tampil, vignette dilunakkan agar sudut tidak tampak menghitam. */
+html[data-photo="on"] .atmos__vignette {
+  background: radial-gradient(130% 100% at 50% 40%, transparent 58%, rgba(0, 0, 0, .3) 100%);
+}
+html[data-photo="on"][data-theme="dawn"] .atmos__vignette {
+  background: radial-gradient(130% 100% at 50% 40%, transparent 62%, rgba(120, 88, 40, .14) 100%);
 }
 
 /* Foto latar: bergantian sendiri, dengan lapisan peredup agar teks tetap terbaca. */
@@ -204,9 +205,9 @@ html[data-theme="dawn"] .atmos__vignette {
 .atmos__scrim[hidden] { display: none; }
 
 /* Peredupan latar dipilih dari pengaturan: tipis / sedang / tebal. */
-html[data-dim="soft"] .atmos__scrim { opacity: .62; }
-html[data-dim="medium"] .atmos__scrim { opacity: .8; }
-html[data-dim="strong"] .atmos__scrim { opacity: .93; }
+html[data-dim="soft"] .atmos__scrim { opacity: .5; }
+html[data-dim="medium"] .atmos__scrim { opacity: .75; }
+html[data-dim="strong"] .atmos__scrim { opacity: 1; }
 
 @keyframes grain {
   0%, 100% { transform: translate(0, 0); }
@@ -904,6 +905,8 @@ body.is-kiosk .hero__status { display: none; }
 }
 
 @media (max-width: 900px) {
+  /* Layar sempit: panel menutupi hampir seluruh lebar, jadi dilembutkan. */
+  html[data-photo="on"] { --panel: rgba(var(--panel-rgb), .38); }
   .board__grid { grid-template-columns: repeat(3, 1fr); }
   .strip { grid-template-columns: 1fr; }
   .strip__items { grid-template-columns: repeat(2, 1fr); }
@@ -930,6 +933,7 @@ body.is-kiosk .hero__status { display: none; }
 }
 
 @media (max-width: 430px) {
+  html[data-photo="on"] { --panel: rgba(var(--panel-rgb), .3); }
   .board__grid { grid-template-columns: 1fr; }
   .strip__items { grid-template-columns: 1fr; }
   .clock { font-size: 3.4rem; }

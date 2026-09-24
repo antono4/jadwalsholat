@@ -40,6 +40,8 @@ node --check app.js && node --check prayer-times.js
   `img.atmos__photo` yang menutupi seluruh layar (`position: fixed` lewat `.atmos`), lalu ditutup
   `.atmos__scrim`. `.atmos` memakai `pointer-events: none`, jadi jangan menaruh kontrol di sana —
   kontrol latar (titik + jeda) ada di `.latarbg` dalam `.masthead__meta`.
+- **Motif filigri girih sudah dihapus** atas permintaan pengguna. Jangan mengembalikan
+  `.atmos__lattice` atau `--lattice-op`; latar hanya foto, aurora, butir, dan vignette.
 - **Peredupan latar** dikendalikan atribut `data-dim` pada `<html>` (`soft`/`medium`/`strong`);
   opasitasnya diatur di CSS, bukan lewat JS. Nilainya disetel dari setelan `galleryDim`.
 - Bila menambah aturan `grid-column`/`grid-row` di satu breakpoint, batalkan di breakpoint yang
