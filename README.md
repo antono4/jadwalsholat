@@ -22,8 +22,8 @@ python3 -m http.server 8000
 | `index.html` | Struktur halaman, ornamen, modal, dan lapisan adzan |
 | `styles.css` | Tema, tata letak, animasi, gaya cetak |
 | `prayer-times.js` | Mesin hisab waktu sholat dan kalender Hijriah (tanpa dependensi) |
-| `app.js` | Logika dashboard: jam, hitung mundur, kartu, busur matahari, kiblat, galeri, setelan |
-| `assets/galeri/` | Foto bawaan galeri dan `kredit.json` berisi atribusinya |
+| `app.js` | Logika dashboard: jam, hitung mundur, kartu, busur matahari, kiblat, latar foto, setelan |
+| `assets/galeri/` | Foto bawaan untuk latar dan `kredit.json` berisi atribusinya |
 
 ## Yang ditampilkan
 
@@ -35,7 +35,8 @@ python3 -m http.server 8000
   sholat, sehingga terlihat posisi matahari sekarang.
 - **Imsak, syuruq, panjang siang, tengah malam, dan sepertiga malam terakhir** (waktu tahajud).
 - **Arah kiblat** dengan besar sudut, arah mata angin, dan jarak ke Ka'bah.
-- **Galeri foto** masjid yang berjalan sendiri, lengkap dengan kredit foto di layar.
+- **Latar foto masjid** yang menutupi seluruh layar dan berganti sendiri, dengan peredup agar
+  jadwal tetap terbaca dan kredit foto tampil di kepala halaman.
 - **Teks berjalan** untuk pengumuman masjid.
 - **Layar penuh saat masuk waktu**, opsional, dengan bunyi penanda.
 
@@ -46,8 +47,8 @@ python3 -m http.server 8000
 | `S` | Buka pengaturan |
 | `M` | Buka jadwal sebulan |
 | `F` | Mode layar penuh (kiosk) |
-| `←` `→` | Foto galeri sebelumnya / berikutnya |
-| `Spasi` | Jeda atau lanjutkan tayangan galeri |
+| `←` `→` | Ganti foto latar sebelumnya / berikutnya |
+| `Spasi` | Jeda atau lanjutkan tayangan latar |
 | `Esc` | Tutup modal / lapisan |
 
 ## Pengaturan

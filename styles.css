@@ -7,6 +7,8 @@
 /* Nilai warna sesungguhnya ditetapkan per tema di bawah (html[data-theme]). */
 
 html[data-theme="night"] {
+  --scrim-a: rgba(3, 6, 14, .86);
+  --scrim-b: rgba(5, 8, 15, .94);
   --bg-0: #05080f;
   --bg-1: #0a1020;
   --bg-2: #101a33;
@@ -33,6 +35,8 @@ html[data-theme="night"] {
 }
 
 html[data-theme="dawn"] {
+  --scrim-a: rgba(252, 247, 238, .88);
+  --scrim-b: rgba(247, 241, 230, .95);
   --bg-0: #f7f1e6;
   --bg-1: #fdf8ef;
   --bg-2: #f3e7d4;
@@ -59,6 +63,8 @@ html[data-theme="dawn"] {
 }
 
 html[data-theme="emerald"] {
+  --scrim-a: rgba(2, 10, 8, .86);
+  --scrim-b: rgba(4, 18, 14, .94);
   --bg-0: #04120e;
   --bg-1: #061a15;
   --bg-2: #0a2620;
@@ -167,6 +173,41 @@ html[data-theme="dawn"] .atmos__vignette {
   background: radial-gradient(130% 100% at 50% 40%, transparent 48%, rgba(120, 88, 40, .16) 100%);
 }
 
+/* Foto latar: bergantian sendiri, dengan lapisan peredup agar teks tetap terbaca. */
+.atmos__slides { position: absolute; inset: 0; }
+.atmos__slides[hidden] { display: none; }
+
+.atmos__photo {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 1.4s var(--ease);
+  will-change: opacity;
+  transform: scale(1.03);
+}
+.atmos__photo.is-active {
+  opacity: 1;
+  /* Gerak halus "Ken Burns"; dimatikan oleh prefers-reduced-motion. */
+  animation: kenburns 26s ease-in-out infinite alternate;
+}
+@keyframes kenburns {
+  from { transform: scale(1.03) translate3d(0, 0, 0); }
+  to { transform: scale(1.12) translate3d(1.2%, -1%, 0); }
+}
+
+.atmos__scrim {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, var(--scrim-a), var(--scrim-b));
+  transition: opacity .9s var(--ease);
+}
+.atmos__scrim[hidden] { display: none; }
+
+/* Peredupan latar dipilih dari pengaturan: tipis / sedang / tebal. */
+html[data-dim="soft"] .atmos__scrim { opacity: .62; }
+html[data-dim="medium"] .atmos__scrim { opacity: .8; }
+html[data-dim="strong"] .atmos__scrim { opacity: .93; }
+
 @keyframes grain {
   0%, 100% { transform: translate(0, 0); }
   20% { transform: translate(-3%, 2%); }
@@ -225,7 +266,47 @@ html[data-theme="dawn"] .atmos__vignette {
   letter-spacing: .05em; text-transform: uppercase;
   margin-top: 2px;
 }
+.masthead__credit {
+  font-size: .66rem; color: var(--txt-3);
+  letter-spacing: .04em; margin-top: 4px;
+  opacity: .85;
+}
+.masthead__credit[hidden] { display: none; }
 .masthead__meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* Kontrol latar di masthead: titik pilih foto dan tombol jeda. */
+.latarbg {
+  display: flex; align-items: center; gap: 8px;
+  padding: 3px 8px 3px 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  background: var(--panel);
+  backdrop-filter: blur(8px);
+}
+.latarbg[hidden] { display: none; }
+.latarbg__dots { display: flex; align-items: center; gap: 6px; }
+.latarbg__pause {
+  width: 26px; height: 26px; flex: none;
+  display: grid; place-items: center;
+  border: 1px solid transparent; border-radius: 50%;
+  background: transparent; color: var(--txt-3);
+  transition: color .25s, border-color .25s, background .25s;
+}
+.latarbg__pause:hover { color: var(--gold-2); border-color: var(--line-strong); background: rgba(201, 162, 74, .12); }
+.latarbg__pause svg { width: 13px; height: 13px; }
+
+.gal-dot {
+  width: 7px; height: 7px; padding: 0;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: transparent;
+  transition: width .3s var(--ease), background .3s, border-color .3s;
+}
+.gal-dot:hover { border-color: var(--line-strong); }
+.gal-dot.is-active {
+  width: 20px;
+  background: var(--gold-1);
+  border-color: var(--gold-2);
+}
 
 .chip {
   font-size: .7rem; letter-spacing: .1em; text-transform: uppercase;
@@ -503,9 +584,8 @@ html[data-theme="dawn"] .mihrab::after { background: var(--bg-1); }
 /* ---------------------------------- deret sekunder ------------------------- */
 .strip {
   display: grid;
-  /* baris 1: jadwal sekunder | galeri | kiblat
-     baris 2: jadwal sekunder (melebar) bila galeri disembunyikan */
-  grid-template-columns: minmax(0, 1fr) minmax(280px, .72fr) auto;
+  /* jadwal sekunder melebar | kiblat */
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: clamp(10px, 1.1vw, 16px);
   align-items: stretch;
 }
@@ -535,165 +615,7 @@ html[data-theme="dawn"] .mihrab::after { background: var(--bg-1); }
 }
 .mini__hint { font-size: .66rem; color: var(--txt-3); }
 
-/* --------------------------------- galeri foto ------------------------------ */
-/* Galeri duduk di dalam baris "strip", jadi tingginya ikut menentukan tinggi
-   baris itu. Bawaan (ringkas) sengaja disamakan dengan kartu sekunder agar
-   tidak menambah tinggi halaman pada monitor masjid 1080p. */
-.gallery {
-  position: relative;
-  min-height: 148px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  overflow: hidden;
-  background: var(--panel-solid);
-  box-shadow: var(--shadow);
-  opacity: 0;
-  transition: opacity .5s var(--ease);
-}
-.gallery.is-ready { opacity: 1; }
-.gallery[hidden] { display: none; }
-
-/* Pilihan tinggi dari pengaturan. */
-.gallery[data-height="compact"] { min-height: 148px; }
-.gallery[data-height="medium"] { min-height: clamp(190px, 19vw, 240px); }
-.gallery[data-height="tall"] { min-height: clamp(240px, 25vw, 320px); }
-
-.gallery__viewport {
-  position: absolute;
-  inset: 0 0 36px 0;
-}
-
-.gal-slide {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  opacity: 0;
-  transition: opacity .85s var(--ease);
-  will-change: opacity;
-}
-.gal-slide.is-active { opacity: 1; }
-
-.gal-slide__img {
-  width: 100%; height: 100%;
-  object-fit: cover;
-  display: block;
-  transform: scale(1.02);
-  /* Gerak halus "Ken Burns"; dinonaktifkan bila pengguna minta gerak minimal. */
-  animation: kenburns 20s ease-in-out infinite alternate;
-}
-@keyframes kenburns {
-  from { transform: scale(1.02) translate3d(0, 0, 0); }
-  to { transform: scale(1.11) translate3d(1.4%, -1.2%, 0); }
-}
-
-.gal-slide__shade {
-  position: absolute; inset: 0;
-  background: linear-gradient(to top, rgba(4, 7, 14, .92) 0%, rgba(4, 7, 14, .3) 38%, transparent 70%);
-  pointer-events: none;
-}
-
-.gal-slide__cap {
-  position: absolute;
-  left: 16px; right: 64px; bottom: 12px;
-  display: flex; flex-direction: column; gap: 2px;
-  pointer-events: none;
-}
-.gal-slide__title {
-  font-family: var(--display);
-  font-size: clamp(.95rem, 1.15vw, 1.15rem);
-  color: var(--txt-1);
-  letter-spacing: .01em;
-}
-.gal-slide__where {
-  font-size: .66rem; letter-spacing: .16em; text-transform: uppercase; color: var(--gold-2);
-}
-
-/* Tombol geser */
-.gal-nav {
-  position: absolute;
-  top: calc((100% - 36px) / 2);
-  transform: translateY(-50%);
-  width: 34px; height: 34px;
-  display: grid; place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: rgba(6, 10, 20, .55);
-  backdrop-filter: blur(6px);
-  color: var(--txt-1);
-  opacity: 0;
-  transition: opacity .3s var(--ease), color .25s, border-color .25s, background .25s;
-  z-index: 3;
-}
-.gal-nav svg { width: 17px; height: 17px; }
-.gal-nav:hover { color: var(--gold-2); border-color: var(--line-strong); background: rgba(201, 162, 74, .16); }
-.gal-nav--prev { left: 12px; }
-.gal-nav--next { right: 12px; }
-.gallery:hover .gal-nav,
-.gallery:focus-within .gal-nav { opacity: 1; }
-@media (hover: none) { .gal-nav { opacity: 1; } }
-
-/* Bilah bawah: penghitung, titik, kredit, tombol jeda */
-.gallery__bar {
-  position: absolute;
-  left: 0; right: 0; bottom: 0;
-  height: 36px;
-  display: flex; align-items: center; gap: 10px;
-  padding: 0 14px;
-  border-top: 1px solid var(--line-soft);
-  background: linear-gradient(to right, rgba(8, 13, 26, .94), rgba(8, 13, 26, .78));
-  backdrop-filter: blur(8px);
-  z-index: 3;
-}
-html[data-theme="dawn"] .gallery__bar {
-  background: linear-gradient(to right, rgba(247, 241, 230, .95), rgba(247, 241, 230, .8));
-}
-
-.gallery__count {
-  font-family: var(--mono); font-size: .72rem; color: var(--txt-3);
-  letter-spacing: .08em; flex: none;
-}
-.gallery__count b { color: var(--gold-2); font-weight: 400; }
-
-.gallery__dots { display: flex; align-items: center; gap: 6px; }
-.gal-dot {
-  width: 7px; height: 7px; padding: 0;
-  border: 1px solid var(--line); border-radius: 999px;
-  background: transparent;
-  transition: width .3s var(--ease), background .3s, border-color .3s;
-}
-.gal-dot:hover { border-color: var(--line-strong); }
-.gal-dot.is-active {
-  width: 20px;
-  background: var(--gold-1);
-  border-color: var(--gold-2);
-}
-
-.gallery__credit {
-  margin-left: auto;
-  font-size: .6rem; color: var(--txt-3);
-  letter-spacing: .04em;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  max-width: 40%;
-}
-.gallery__credit[hidden] { display: none; }
-
-.gal-pause {
-  width: 30px; height: 30px; flex: none;
-  display: grid; place-items: center;
-  margin-left: auto;
-  border: 1px solid var(--line); border-radius: 9px;
-  background: transparent; color: var(--txt-2);
-  transition: color .25s, border-color .25s, background .25s;
-}
-.gal-pause:hover { color: var(--gold-2); border-color: var(--line-strong); background: rgba(201, 162, 74, .1); }
-.gal-pause svg { width: 15px; height: 15px; grid-area: 1 / 1; }
-.gal-pause__play { display: none; }
-.gal-pause[aria-pressed="true"] .gal-pause__pause { display: none; }
-.gal-pause[aria-pressed="true"] .gal-pause__play { display: block; }
-
-/* Bila kredit tampil, tombol jeda tidak lagi butuh margin-left:auto berlebih. */
-.gallery__credit:not([hidden]) + .gal-pause { margin-left: 10px; }
-
+/* --------------------------------- latar foto ------------------------------ */
 /* ----------------------------------- kiblat -------------------------------- */
 .qibla {
   border: 1px solid var(--line);
@@ -979,11 +901,6 @@ body.is-kiosk .hero__status { display: none; }
   .hero__count { grid-area: count; }
   .hero__clock { grid-area: clock; }
   .hero__arc { grid-area: arc; }
-  /* Galeri turun ke barisnya sendiri di samping kiblat. */
-  .strip { grid-template-columns: minmax(0, 1fr) auto; }
-  .strip > .gallery { grid-column: 1 / -1; grid-row: 2; }
-  .strip > .qibla { grid-row: 1; grid-column: 2; }
-  .strip__items { grid-row: 1; grid-column: 1; }
 }
 
 @media (max-width: 900px) {
@@ -991,14 +908,6 @@ body.is-kiosk .hero__status { display: none; }
   .strip { grid-template-columns: 1fr; }
   .strip__items { grid-template-columns: repeat(2, 1fr); }
   .qibla { flex-direction: row; align-items: center; justify-content: space-between; }
-  /* Batalkan penempatan kolom dari breakpoint 1180px, jika tidak kiblat
-     membuat kolom implisit yang menghimpit galeri. */
-  .strip > .gallery,
-  .strip > .qibla,
-  .strip__items { grid-column: auto; grid-row: auto; }
-  .gallery { min-height: 150px; }
-  .gallery__credit { display: none; }
-  .gal-slide__cap { right: 52px; }
 }
 
 @media (max-width: 700px) {
@@ -1024,9 +933,6 @@ body.is-kiosk .hero__status { display: none; }
   .board__grid { grid-template-columns: 1fr; }
   .strip__items { grid-template-columns: 1fr; }
   .clock { font-size: 3.4rem; }
-  .gallery__count { display: none; }
-  .gal-slide__cap { left: 12px; right: 46px; bottom: 8px; }
-  .gal-slide__where { display: none; }
 }
 
 /* ------------------------------- aksesibilitas ----------------------------- */
@@ -1037,9 +943,6 @@ body.is-kiosk .hero__status { display: none; }
     transition-duration: .01ms !important;
   }
   .reveal { opacity: 1; }
-  /* Tanpa animasi latar, jadi sediakan pembeda visual antar slide. */
-  .gal-slide.is-active { opacity: 1; }
-  .gal-slide__shade { background: linear-gradient(to top, rgba(4, 7, 14, .95) 0%, rgba(4, 7, 14, .45) 45%, rgba(4, 7, 14, .18) 100%); }
 }
 
 @media (prefers-contrast: more) {
@@ -1049,7 +952,7 @@ body.is-kiosk .hero__status { display: none; }
 
 /* ---------------------------------- cetak ---------------------------------- */
 @media print {
-  .atmos, .masthead__meta, .ticker, .adhan, .modal__foot, .iconbtn, .btn, .gallery { display: none !important; }
+  .atmos, .masthead__meta, .ticker, .adhan, .modal__foot, .iconbtn, .btn, .latarbg { display: none !important; }
   body { background: #fff; color: #000; }
   .modal { position: static; display: block; padding: 0; }
   .modal__scrim { display: none; }

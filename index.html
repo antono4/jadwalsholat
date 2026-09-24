@@ -16,8 +16,10 @@
 </head>
 <body>
 
-<!-- ============================ LATAR: filigri girih ============================ -->
+<!-- ================= LATAR: foto masjid + filigri girih ================= -->
 <div class="atmos" aria-hidden="true">
+  <div class="atmos__slides" data-gallery-track></div>
+  <div class="atmos__scrim"></div>
   <svg class="atmos__lattice" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <pattern id="girih" width="96" height="96" patternUnits="userSpaceOnUse">
@@ -59,10 +61,17 @@
     <div class="masthead__id">
       <h1 class="masthead__name" data-mosque-name>Masjid Al-Ikhlas</h1>
       <p class="masthead__addr" data-mosque-address>Jl. Melati Raya No. 12 · Jakarta Selatan</p>
+      <p class="masthead__credit" data-gallery-credit hidden></p>
     </div>
     <div class="masthead__meta">
       <span class="chip chip--soft" data-hijri-chip>—</span>
       <span class="chip chip--soft" data-method-chip>Kemenag RI</span>
+      <div class="latarbg" data-gallery-bar hidden>
+        <div class="latarbg__dots" data-gallery-dots role="tablist" aria-label="Pilih foto latar"></div>
+        <button class="latarbg__pause" type="button" data-gallery-toggle aria-label="Jeda tayangan latar" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
       <button class="iconbtn" type="button" data-open-settings title="Pengaturan (S)" aria-label="Buka pengaturan">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5Zm7.4-2.6.1-.9-.1-.9 1.7-1.3-1.7-2.9-2 .8a7.4 7.4 0 0 0-1.6-.9L15.4 4h-3.4l-.4 2.1a7.4 7.4 0 0 0-1.6.9l-2-.8-1.7 2.9L8 10.4l-.1.9.1.9-1.7 1.3 1.7 2.9 2-.8c.5.4 1 .7 1.6.9l.4 2.1h3.4l.4-2.1c.6-.2 1.1-.5 1.6-.9l2 .8 1.7-2.9Z"/></svg>
       </button>
@@ -171,29 +180,6 @@
   <!-- ============================== DERET SEKUNDER ============================== -->
   <section class="strip reveal" style="--d:3">
     <div class="strip__items" data-strip></div>
-
-    <!-- ============================== GALERI SLIDER ============================== -->
-    <div class="gallery" data-gallery aria-roledescription="carousel" aria-label="Galeri foto masjid">
-      <div class="gallery__viewport" data-gallery-track></div>
-
-      <button class="gal-nav gal-nav--prev" type="button" data-gallery-prev aria-label="Foto sebelumnya">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <button class="gal-nav gal-nav--next" type="button" data-gallery-next aria-label="Foto berikutnya">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-
-      <div class="gallery__bar">
-        <span class="gallery__count"><b data-gallery-index>1</b> / <span data-gallery-total>6</span></span>
-        <div class="gallery__dots" data-gallery-dots role="tablist" aria-label="Pilih foto"></div>
-        <span class="gallery__credit" data-gallery-credit hidden></span>
-        <button class="gal-pause" type="button" data-gallery-toggle aria-label="Jeda tayangan" aria-pressed="false">
-          <svg class="gal-pause__pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          <svg class="gal-pause__play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5Z" fill="currentColor"/></svg>
-        </button>
-      </div>
-    </div>
-
     <div class="qibla" data-qibla-card>
       <h2 class="qibla__title">Arah Kiblat</h2>
       <div class="qibla__body">
@@ -225,7 +211,7 @@
     <div class="ticker__viewport">
       <div class="ticker__track" data-ticker-track><span data-ticker-text></span></div>
     </div>
-    <div class="ticker__hint">S pengaturan · M jadwal sebulan · F layar penuh · ← → galeri</div>
+    <div class="ticker__hint">S pengaturan · M jadwal sebulan · F layar penuh · ← → ganti latar</div>
   </footer>
 </div>
 
@@ -358,12 +344,12 @@
       </fieldset>
 
       <fieldset class="field-group">
-        <legend>Galeri Foto</legend>
-        <p class="field__note">Foto berjalan otomatis di bawah jadwal. Isi daftar dengan satu alamat gambar per baris.</p>
+        <legend>Latar Foto</legend>
+        <p class="field__note">Foto masjid tampil sebagai latar seluruh layar dan berganti sendiri, sehingga jadwal tetap terbaca di atasnya.</p>
         <label class="switch">
           <input type="checkbox" data-in="galleryOn">
           <span class="switch__track"><span class="switch__dot"></span></span>
-          <span class="switch__text">Tampilkan galeri foto</span>
+          <span class="switch__text">Tampilkan foto sebagai latar</span>
         </label>
         <div class="field-row">
           <label class="field">
@@ -371,11 +357,11 @@
             <input type="number" step="1" min="3" max="120" data-in="galleryInterval">
           </label>
           <label class="field">
-            <span>Tinggi galeri</span>
-            <select data-in="galleryHeight">
-              <option value="compact">Ringkas</option>
-              <option value="medium">Sedang</option>
-              <option value="tall">Tinggi</option>
+            <span>Peredupan latar</span>
+            <select data-in="galleryDim">
+              <option value="soft">Tipis — foto lebih terlihat</option>
+              <option value="medium">Sedang — seimbang</option>
+              <option value="strong">Tebal — teks paling jelas</option>
             </select>
           </label>
         </div>

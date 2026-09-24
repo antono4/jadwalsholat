@@ -100,7 +100,7 @@
     adhanOverlay: true,
     galleryOn: true,
     galleryInterval: 8,
-    galleryHeight: 'compact',
+    galleryDim: 'medium',
     galleryList: ''
   };
 
@@ -689,7 +689,7 @@
     });
   }
 
-  /* ---------------------------------- galeri --------------------------------- */
+  /* ---------------------------------- latar ---------------------------------- */
   /* Daftar foto: bawaan, atau bawaan + URL tambahan dari pengaturan.
      Baris "keterangan | tempat | kredit | url" didukung untuk kustomisasi. */
   function galleryItems(listOverride) {
@@ -708,46 +708,42 @@
         credit: parts.length > 3 ? parts[2] : ''
       });
     });
-    return items.length ? DEFAULT_GALLERY.concat(items) : DEFAULT_GALLERY.slice();
+    // Foto bawaan selalu dipakai; daftar pengguna menyusul di belakangnya.
+    return DEFAULT_GALLERY.concat(items);
   }
 
   function renderGallery() {
-    var section = $('[data-gallery]');
-    if (!section) return;
+    var layer = $('[data-gallery-track]');
+    if (!layer) return;
+
+    var dim = state.settings.galleryDim || 'medium';
+    document.documentElement.setAttribute('data-dim', dim);
 
     var on = state.settings.galleryOn && galleryItems().length > 0;
-    section.hidden = !on;
+    layer.hidden = !on;
+    var scrim = $('.atmos__scrim');
+    if (scrim) scrim.hidden = !on;
+    var bar = $('[data-gallery-bar]');
+    if (bar) bar.hidden = !on;
     if (!on) { stopGallery(); return; }
 
     var items = galleryItems();
     state.galleryItems = items;
 
-    $('[data-gallery-track]').innerHTML = items.map(function (it, i) {
-      return '<figure class="gal-slide' + (i === 0 ? ' is-active' : '') + '" data-gallery-slide="' + i + '">' +
-        '<img class="gal-slide__img" src="' + esc(it.src) + '" alt="' + esc(it.caption || ('Foto masjid ' + (i + 1))) + '"' +
-        (i === 0 ? ' fetchpriority="high"' : ' loading="lazy" decoding="async"') + '>' +
-        '<div class="gal-slide__shade"></div>' +
-        '<figcaption class="gal-slide__cap">' +
-          (it.caption ? '<span class="gal-slide__title">' + esc(it.caption) + '</span>' : '') +
-          (it.place ? '<span class="gal-slide__where">' + esc(it.place) + '</span>' : '') +
-        '</figcaption>' +
-        '</figure>';
+    layer.innerHTML = items.map(function (it, i) {
+      return '<img class="atmos__photo' + (i === 0 ? ' is-active' : '') + '" data-gallery-slide="' + i + '"' +
+        ' src="' + esc(it.src) + '" alt="" aria-hidden="true"' +
+        (i === 0 ? ' fetchpriority="high"' : ' loading="lazy" decoding="async"') + '>';
     }).join('');
 
     $('[data-gallery-dots]').innerHTML = items.map(function (it, i) {
       return '<button class="gal-dot' + (i === 0 ? ' is-active' : '') + '" type="button" role="tab" ' +
-        'data-gallery-dot="' + i + '" aria-label="Foto ' + (i + 1) + (it.caption ? ': ' + esc(it.caption) : '') + '"' +
+        'data-gallery-dot="' + i + '" aria-label="Latar ' + (i + 1) + (it.caption ? ': ' + esc(it.caption) : '') + '"' +
         ' aria-selected="' + (i === 0 ? 'true' : 'false') + '"></button>';
     }).join('');
 
-    $('[data-gallery-total]').textContent = items.length;
-
     if (state.galleryIndex >= items.length) state.galleryIndex = 0;
     showSlide(state.galleryIndex, false);
-    section.classList.add('is-ready');
-
-    var h = $('[data-in="galleryHeight"]');
-    if (h) section.setAttribute('data-height', state.settings.galleryHeight || 'compact');
 
     updateGalleryNote();
     startGallery();
@@ -760,9 +756,8 @@
     state.galleryIndex = ((i % n) + n) % n;
 
     $$('[data-gallery-slide]').forEach(function (el) {
-      var active = Number(el.getAttribute('data-gallery-slide')) === state.galleryIndex;
-      el.classList.toggle('is-active', active);
-      el.setAttribute('aria-hidden', active ? 'false' : 'true');
+      // Foto latar murni dekoratif: tidak pernah diekspos ke pembaca layar.
+      el.classList.toggle('is-active', Number(el.getAttribute('data-gallery-slide')) === state.galleryIndex);
     });
     $$('[data-gallery-dot]').forEach(function (el) {
       var active = Number(el.getAttribute('data-gallery-dot')) === state.galleryIndex;
@@ -770,13 +765,12 @@
       el.setAttribute('aria-selected', active ? 'true' : 'false');
     });
 
-    $('[data-gallery-index]').textContent = state.galleryIndex + 1;
-
     var cur = items[state.galleryIndex];
     var creditEl = $('[data-gallery-credit]');
     if (creditEl) {
-      creditEl.textContent = cur.credit || '';
-      creditEl.hidden = !cur.credit;
+      // Kredit tampil di masthead: keterangan foto + pemilik hak.
+      creditEl.textContent = [cur.caption, cur.credit].filter(Boolean).join(' · ');
+      creditEl.hidden = !(cur.caption || cur.credit);
     }
 
     if (animate !== false) restartGalleryTimer();
@@ -819,41 +813,28 @@
     var btn = $('[data-gallery-toggle]');
     if (btn) {
       btn.setAttribute('aria-pressed', state.galleryPaused ? 'true' : 'false');
-      btn.setAttribute('aria-label', state.galleryPaused ? 'Lanjutkan tayangan' : 'Jeda tayangan');
+      btn.setAttribute('aria-label', state.galleryPaused ? 'Lanjutkan tayangan latar' : 'Jeda tayangan latar');
     }
     startGallery();
   }
 
   function bindGallery() {
-    var section = $('[data-gallery]');
-    if (!section) return;
-
-    $('[data-gallery-prev]').addEventListener('click', function () { galleryStep(-1); });
-    $('[data-gallery-next]').addEventListener('click', function () { galleryStep(1); });
-    $('[data-gallery-toggle]').addEventListener('click', toggleGalleryPause);
-
     // Pratinjau jumlah foto saat daftar diubah, sebelum disimpan.
     var listEl = document.querySelector('[data-in="galleryList"]');
     if (listEl) {
       listEl.addEventListener('input', function () { updateGalleryNote(listEl.value); });
     }
 
-    section.addEventListener('click', function (e) {
-      var dot = e.target.closest('[data-gallery-dot]');
-      if (dot) showSlide(Number(dot.getAttribute('data-gallery-dot')));
-    });
+    var dotBox = $('[data-gallery-dots]');
+    if (dotBox) {
+      dotBox.addEventListener('click', function (e) {
+        var dot = e.target.closest('[data-gallery-dot]');
+        if (dot) showSlide(Number(dot.getAttribute('data-gallery-dot')));
+      });
+    }
 
-    // Geser dengan jari pada layar sentuh.
-    var startX = null;
-    section.addEventListener('touchstart', function (e) {
-      startX = e.touches[0].clientX;
-    }, { passive: true });
-    section.addEventListener('touchend', function (e) {
-      if (startX === null) return;
-      var dx = e.changedTouches[0].clientX - startX;
-      if (Math.abs(dx) > 42) galleryStep(dx < 0 ? 1 : -1);
-      startX = null;
-    }, { passive: true });
+    var toggle = $('[data-gallery-toggle]');
+    if (toggle) toggle.addEventListener('click', toggleGalleryPause);
 
     // Bila tab kembali aktif, timer dijalankan ulang agar tidak menumpuk.
     document.addEventListener('visibilitychange', function () {
@@ -1028,7 +1009,7 @@
   /* ---------------------------------- modal --------------------------------- */
   var FORM_FIELDS = ['name', 'address', 'ticker', 'city', 'lat', 'lng', 'tzMode', 'tzOffset',
     'method', 'asr', 'highLat', 'clockFormat', 'theme', 'adhanSound', 'adhanOverlay',
-    'galleryOn', 'galleryInterval', 'galleryHeight', 'galleryList'];
+    'galleryOn', 'galleryInterval', 'galleryDim', 'galleryList'];
 
   function populateSelects() {
     var methodSel = $('[data-in="method"]');
@@ -1076,7 +1057,7 @@
     var total = custom + DEFAULT_GALLERY.length;
     el.textContent = custom > 0
       ? total + ' foto siap tayang (' + custom + ' tambahan dari daftar Anda).'
-      : total + ' foto bawaan siap tayang. Tambahkan alamat gambar untuk menimpanya.';
+      : total + ' foto bawaan siap tayang. Tambahkan alamat gambar untuk menambah foto.';
   }
 
   function readForm() {
