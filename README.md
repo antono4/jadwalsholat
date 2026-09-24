@@ -22,7 +22,8 @@ python3 -m http.server 8000
 | `index.html` | Struktur halaman, ornamen, modal, dan lapisan adzan |
 | `styles.css` | Tema, tata letak, animasi, gaya cetak |
 | `prayer-times.js` | Mesin hisab waktu sholat dan kalender Hijriah (tanpa dependensi) |
-| `app.js` | Logika dashboard: jam, hitung mundur, kartu, busur matahari, kiblat, setelan |
+| `app.js` | Logika dashboard: jam, hitung mundur, kartu, busur matahari, kiblat, galeri, setelan |
+| `assets/galeri/` | Foto bawaan galeri dan `kredit.json` berisi atribusinya |
 
 ## Yang ditampilkan
 
@@ -34,6 +35,7 @@ python3 -m http.server 8000
   sholat, sehingga terlihat posisi matahari sekarang.
 - **Imsak, syuruq, panjang siang, tengah malam, dan sepertiga malam terakhir** (waktu tahajud).
 - **Arah kiblat** dengan besar sudut, arah mata angin, dan jarak ke Ka'bah.
+- **Galeri foto** masjid yang berjalan sendiri, lengkap dengan kredit foto di layar.
 - **Teks berjalan** untuk pengumuman masjid.
 - **Layar penuh saat masuk waktu**, opsional, dengan bunyi penanda.
 
@@ -44,6 +46,8 @@ python3 -m http.server 8000
 | `S` | Buka pengaturan |
 | `M` | Buka jadwal sebulan |
 | `F` | Mode layar penuh (kiosk) |
+| `←` `→` | Foto galeri sebelumnya / berikutnya |
+| `Spasi` | Jeda atau lanjutkan tayangan galeri |
 | `Esc` | Tutup modal / lapisan |
 
 ## Pengaturan
@@ -58,6 +62,11 @@ Semua setelan tersimpan di `localStorage` peramban, jadi bertahan setelah halama
 - **Mazhab Ashar** — standar (Syafi'i, Maliki, Hambali) atau Hanafi.
 - **Penyesuaian ihtiyati** — koreksi menit per waktu agar persis dengan jadwal setempat.
 - **Tampilan** — format jam, nuansa warna (Malam mihrab, Fajar, Zamrud), bunyi, dan layar adzan.
+- **Galeri foto** — nyalakan/matikan, selang tayang (3–120 detik), tinggi panel (ringkas, sedang,
+  tinggi), dan daftar foto sendiri dengan format `keterangan | tempat | kredit | url` per baris.
+  Baris kosong dan baris berawalan `#` diabaikan. Bila daftar diisi, foto bawaan tetap dipakai
+  lebih dulu dan foto Anda menyusul. Tayangan otomatis berhenti saat pengaturan dibuka, saat
+  masuk waktu adzan, dan saat tab tidak aktif.
 
 ## Ketelitian hisab
 

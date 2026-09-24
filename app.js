@@ -66,6 +66,18 @@
   var SHOLAT = TIMELINE.filter(function (t) { return t.sholat; });
   var ARC_MARKS = TIMELINE.slice();
 
+  /* Foto bawaan galeri. Berkasnya ada di assets/galeri/ beserta kredit.json.
+     Kredit wajib ditampilkan karena sebagian berlisensi CC BY-SA.
+     Ganti dengan foto masjid Anda sendiri, lalu kredit boleh dikosongkan. */
+  var DEFAULT_GALLERY = [
+    { src: 'assets/galeri/Masjid_Agung_Al-Azhar_Front.jpg', caption: 'Masjid Agung Al-Azhar', place: 'Jakarta Selatan', credit: 'Irvan Cahyo N · CC BY-SA 4.0' },
+    { src: 'assets/galeri/Inner_Masjid_Agung.jpg', caption: 'Ruang utama masjid', place: 'Interior', credit: 'Irvan Cahyo N · CC BY-SA 4.0' },
+    { src: 'assets/galeri/Mosque_Dome_and_Minaret_in_Medan_Sumatra_Indonesia.jpg', caption: 'Masjid Raya Medan', place: 'Sumatera Utara', credit: 'Pratyeka · CC BY-SA 3.0' },
+    { src: 'assets/galeri/Yogyakarta_Indonesia_Masjid-Soko-Tunggal-01.jpg', caption: 'Masjid Soko Tunggal', place: 'Yogyakarta', credit: 'CEphoto, Uwe Aranas · CC BY-SA 3.0' },
+    { src: 'assets/galeri/Kuta_Bali_Indonesia_Masjid-Agung-Ibnu-Batutah-02.jpg', caption: 'Masjid Agung Ibnu Batutah', place: 'Kuta, Bali', credit: 'CEphoto, Uwe Aranas · CC BY-SA 3.0' },
+    { src: 'assets/galeri/Banten_Masjid_Agung_Banten.jpg', caption: 'Masjid Agung Banten', place: 'Serang, Banten', credit: 'Kementerian Keuangan RI · Domain publik' }
+  ];
+
   var DEFAULTS = {
     name: 'Masjid Al-Ikhlas',
     address: 'Jl. Melati Raya No. 12 · Jakarta Selatan',
@@ -85,7 +97,11 @@
     clockFormat: '24',
     theme: 'night',
     adhanSound: false,
-    adhanOverlay: true
+    adhanOverlay: true,
+    galleryOn: true,
+    galleryInterval: 8,
+    galleryHeight: 'compact',
+    galleryList: ''
   };
 
   var state = {
@@ -96,7 +112,11 @@
     modalMonth: null,
     tickTimer: null,
     audioCtx: null,
-    arcCacheKey: null
+    arcCacheKey: null,
+    galleryIndex: 0,
+    galleryTimer: null,
+    galleryPaused: false,
+    galleryItems: []
   };
 
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
@@ -669,6 +689,186 @@
     });
   }
 
+  /* ---------------------------------- galeri --------------------------------- */
+  /* Daftar foto: bawaan, atau bawaan + URL tambahan dari pengaturan.
+     Baris "keterangan | tempat | kredit | url" didukung untuk kustomisasi. */
+  function galleryItems(listOverride) {
+    var raw = (typeof listOverride === 'string' ? listOverride : (state.settings.galleryList || '')).split('\n');
+    var items = [];
+    raw.forEach(function (line) {
+      line = line.trim();
+      if (!line || line.charAt(0) === '#') return;
+      var parts = line.split('|').map(function (s) { return s.trim(); });
+      var src = parts[parts.length - 1];
+      if (!/^(https?:|\/|\.{0,2}\/|[A-Za-z0-9_-]+\/)/.test(src) && !/\.(jpe?g|png|webp|avif|gif)$/i.test(src)) return;
+      items.push({
+        src: src,
+        caption: parts.length > 1 ? parts[0] : '',
+        place: parts.length > 2 ? parts[1] : '',
+        credit: parts.length > 3 ? parts[2] : ''
+      });
+    });
+    return items.length ? DEFAULT_GALLERY.concat(items) : DEFAULT_GALLERY.slice();
+  }
+
+  function renderGallery() {
+    var section = $('[data-gallery]');
+    if (!section) return;
+
+    var on = state.settings.galleryOn && galleryItems().length > 0;
+    section.hidden = !on;
+    if (!on) { stopGallery(); return; }
+
+    var items = galleryItems();
+    state.galleryItems = items;
+
+    $('[data-gallery-track]').innerHTML = items.map(function (it, i) {
+      return '<figure class="gal-slide' + (i === 0 ? ' is-active' : '') + '" data-gallery-slide="' + i + '">' +
+        '<img class="gal-slide__img" src="' + esc(it.src) + '" alt="' + esc(it.caption || ('Foto masjid ' + (i + 1))) + '"' +
+        (i === 0 ? ' fetchpriority="high"' : ' loading="lazy" decoding="async"') + '>' +
+        '<div class="gal-slide__shade"></div>' +
+        '<figcaption class="gal-slide__cap">' +
+          (it.caption ? '<span class="gal-slide__title">' + esc(it.caption) + '</span>' : '') +
+          (it.place ? '<span class="gal-slide__where">' + esc(it.place) + '</span>' : '') +
+        '</figcaption>' +
+        '</figure>';
+    }).join('');
+
+    $('[data-gallery-dots]').innerHTML = items.map(function (it, i) {
+      return '<button class="gal-dot' + (i === 0 ? ' is-active' : '') + '" type="button" role="tab" ' +
+        'data-gallery-dot="' + i + '" aria-label="Foto ' + (i + 1) + (it.caption ? ': ' + esc(it.caption) : '') + '"' +
+        ' aria-selected="' + (i === 0 ? 'true' : 'false') + '"></button>';
+    }).join('');
+
+    $('[data-gallery-total]').textContent = items.length;
+
+    if (state.galleryIndex >= items.length) state.galleryIndex = 0;
+    showSlide(state.galleryIndex, false);
+    section.classList.add('is-ready');
+
+    var h = $('[data-in="galleryHeight"]');
+    if (h) section.setAttribute('data-height', state.settings.galleryHeight || 'compact');
+
+    updateGalleryNote();
+    startGallery();
+  }
+
+  function showSlide(i, animate) {
+    var items = state.galleryItems;
+    if (!items.length) return;
+    var n = items.length;
+    state.galleryIndex = ((i % n) + n) % n;
+
+    $$('[data-gallery-slide]').forEach(function (el) {
+      var active = Number(el.getAttribute('data-gallery-slide')) === state.galleryIndex;
+      el.classList.toggle('is-active', active);
+      el.setAttribute('aria-hidden', active ? 'false' : 'true');
+    });
+    $$('[data-gallery-dot]').forEach(function (el) {
+      var active = Number(el.getAttribute('data-gallery-dot')) === state.galleryIndex;
+      el.classList.toggle('is-active', active);
+      el.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+
+    $('[data-gallery-index]').textContent = state.galleryIndex + 1;
+
+    var cur = items[state.galleryIndex];
+    var creditEl = $('[data-gallery-credit]');
+    if (creditEl) {
+      creditEl.textContent = cur.credit || '';
+      creditEl.hidden = !cur.credit;
+    }
+
+    if (animate !== false) restartGalleryTimer();
+  }
+
+  function galleryStep(delta) { showSlide(state.galleryIndex + delta); }
+
+  function galleryPaused() {
+    if (state.galleryPaused || document.hidden) return true;
+    // Modal atau layar adzan menutup pandangan, jadi tayangan dijeda.
+    var overlays = ['[data-modal-settings]', '[data-modal-monthly]', '[data-adhan]'];
+    for (var i = 0; i < overlays.length; i++) {
+      var el = $(overlays[i]);
+      if (el && !el.hidden) return true;
+    }
+    return false;
+  }
+
+  function stopGallery() {
+    clearInterval(state.galleryTimer);
+    state.galleryTimer = null;
+  }
+
+  function startGallery() {
+    stopGallery();
+    if (!state.settings.galleryOn) return;
+    if (galleryPaused()) return;
+    var secs = Math.max(3, Math.min(120, Number(state.settings.galleryInterval) || 8));
+    state.galleryTimer = setInterval(function () {
+      if (!galleryPaused()) galleryStep(1);
+    }, secs * 1000);
+  }
+
+  function restartGalleryTimer() {
+    if (!state.galleryPaused) startGallery();
+  }
+
+  function toggleGalleryPause() {
+    state.galleryPaused = !state.galleryPaused;
+    var btn = $('[data-gallery-toggle]');
+    if (btn) {
+      btn.setAttribute('aria-pressed', state.galleryPaused ? 'true' : 'false');
+      btn.setAttribute('aria-label', state.galleryPaused ? 'Lanjutkan tayangan' : 'Jeda tayangan');
+    }
+    startGallery();
+  }
+
+  function bindGallery() {
+    var section = $('[data-gallery]');
+    if (!section) return;
+
+    $('[data-gallery-prev]').addEventListener('click', function () { galleryStep(-1); });
+    $('[data-gallery-next]').addEventListener('click', function () { galleryStep(1); });
+    $('[data-gallery-toggle]').addEventListener('click', toggleGalleryPause);
+
+    // Pratinjau jumlah foto saat daftar diubah, sebelum disimpan.
+    var listEl = document.querySelector('[data-in="galleryList"]');
+    if (listEl) {
+      listEl.addEventListener('input', function () { updateGalleryNote(listEl.value); });
+    }
+
+    section.addEventListener('click', function (e) {
+      var dot = e.target.closest('[data-gallery-dot]');
+      if (dot) showSlide(Number(dot.getAttribute('data-gallery-dot')));
+    });
+
+    // Geser dengan jari pada layar sentuh.
+    var startX = null;
+    section.addEventListener('touchstart', function (e) {
+      startX = e.touches[0].clientX;
+    }, { passive: true });
+    section.addEventListener('touchend', function (e) {
+      if (startX === null) return;
+      var dx = e.changedTouches[0].clientX - startX;
+      if (Math.abs(dx) > 42) galleryStep(dx < 0 ? 1 : -1);
+      startX = null;
+    }, { passive: true });
+
+    // Bila tab kembali aktif, timer dijalankan ulang agar tidak menumpuk.
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) stopGallery();
+      else startGallery();
+    });
+
+    if (window.matchMedia) {
+      var rm = window.matchMedia('(prefers-reduced-motion: reduce)');
+      var onChange = function () { if (rm.matches) stopGallery(); else startGallery(); };
+      if (rm.addEventListener) rm.addEventListener('change', onChange);
+      else if (rm.addListener) rm.addListener(onChange);
+    }
+  }
+
   /* ---------------------------------- adzan --------------------------------- */
   function checkAdhan(now, ctx) {
     var s = state.settings;
@@ -693,11 +893,15 @@
       new Date(moment.ts).getHours() + new Date(moment.ts).getMinutes() / 60,
       state.settings.clockFormat === '12');
     layer.hidden = false;
+    stopGallery();
     clearTimeout(showAdhan._t);
     showAdhan._t = setTimeout(hideAdhan, 45000);
   }
 
-  function hideAdhan() { $('[data-adhan]').hidden = true; }
+  function hideAdhan() {
+    $('[data-adhan]').hidden = true;
+    startGallery();
+  }
 
   function playChime() {
     try {
@@ -778,6 +982,7 @@
     var now = nowForSettings(new Date());
     state.modalMonth = { year: now.getFullYear(), month: now.getMonth() };
     renderMonthly();
+    stopGallery();
     $('[data-modal-monthly]').hidden = false;
   }
 
@@ -822,7 +1027,8 @@
 
   /* ---------------------------------- modal --------------------------------- */
   var FORM_FIELDS = ['name', 'address', 'ticker', 'city', 'lat', 'lng', 'tzMode', 'tzOffset',
-    'method', 'asr', 'highLat', 'clockFormat', 'theme', 'adhanSound', 'adhanOverlay'];
+    'method', 'asr', 'highLat', 'clockFormat', 'theme', 'adhanSound', 'adhanOverlay',
+    'galleryOn', 'galleryInterval', 'galleryHeight', 'galleryList'];
 
   function populateSelects() {
     var methodSel = $('[data-in="method"]');
@@ -860,6 +1066,17 @@
       el.value = s.tune[el.getAttribute('data-tune')] || 0;
     });
     updateMethodNote();
+    updateGalleryNote();
+  }
+
+  function updateGalleryNote(listOverride) {
+    var el = $('[data-gallery-note]');
+    if (!el) return;
+    var custom = galleryItems(listOverride).length - DEFAULT_GALLERY.length;
+    var total = custom + DEFAULT_GALLERY.length;
+    el.textContent = custom > 0
+      ? total + ' foto siap tayang (' + custom + ' tambahan dari daftar Anda).'
+      : total + ' foto bawaan siap tayang. Tambahkan alamat gambar untuk menimpanya.';
   }
 
   function readForm() {
@@ -891,10 +1108,14 @@
 
   function openSettings() {
     fillForm();
+    stopGallery();
     $('[data-modal-settings]').hidden = false;
   }
 
-  function closeSettings() { $('[data-modal-settings]').hidden = true; }
+  function closeSettings() {
+    $('[data-modal-settings]').hidden = true;
+    startGallery();
+  }
 
   function applySettings(next, message) {
     state.settings = next;
@@ -903,6 +1124,7 @@
     state.arcCacheKey = null;
     state.fired = {};
     recompute(new Date());
+    renderGallery();
     if (message) toast(message);
   }
 
@@ -949,7 +1171,10 @@
 
     $('[data-open-monthly]').addEventListener('click', openMonthly);
     $$('[data-close-monthly]').forEach(function (el) {
-      el.addEventListener('click', function () { $('[data-modal-monthly]').hidden = true; });
+      el.addEventListener('click', function () {
+        $('[data-modal-monthly]').hidden = true;
+        startGallery();
+      });
     });
     $('[data-month-prev]').addEventListener('click', function () {
       state.modalMonth.month--;
@@ -975,9 +1200,13 @@
       if (e.key === 's' || e.key === 'S') { openSettings(); }
       if (e.key === 'm' || e.key === 'M') { openMonthly(); }
       if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); }
+      if (e.key === 'ArrowLeft') { galleryStep(-1); }
+      if (e.key === 'ArrowRight') { galleryStep(1); }
+      if (e.key === ' ') { e.preventDefault(); toggleGalleryPause(); }
       if (e.key === 'Escape') {
         closeSettings();
         $('[data-modal-monthly]').hidden = true;
+        startGallery();
         hideAdhan();
       }
     });
@@ -1012,10 +1241,12 @@
 
     populateSelects();
     bind();
+    bindGallery();
 
     var nowReal = new Date();
     var now = nowForSettings(nowReal);
     recompute(nowReal);
+    renderGallery();
     checkAdhan(now, state.data);
 
     state.tickTimer = setInterval(tick, 1000);
@@ -1045,6 +1276,10 @@
     openSettings: openSettings,
     openMonthly: openMonthly,
     settings: function () { return state.settings; },
+    galleryItems: galleryItems,
+    gallery: function () { return { index: state.galleryIndex, paused: state.galleryPaused, items: state.galleryItems.length, running: !!state.galleryTimer }; },
+    galleryStep: galleryStep,
+    galleryPause: toggleGalleryPause,
     apply: function (patch) {
       var next = deepMerge(clone(state.settings), patch);
       applySettings(next, '');

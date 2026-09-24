@@ -1,0 +1,59 @@
+{
+  "catatan": "Kredit foto bawaan galeri. Semua berkas berlisensi bebas dan sudah diperkecil ke 1200px lebar, rasio 3:2, quality 78. Bila Anda mengganti dengan foto masjid sendiri, entri di sini boleh dihapus.",
+  "photos": [
+    {
+      "file": "Masjid_Agung_Al-Azhar_Front.jpg",
+      "caption": "Masjid Agung Al-Azhar",
+      "place": "Jakarta Selatan",
+      "artist": "Irvan Cahyo N",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "source": "https://commons.wikimedia.org/wiki/File:Masjid_Agung_Al-Azhar_Front.jpg"
+    },
+    {
+      "file": "Yogyakarta_Indonesia_Masjid-Soko-Tunggal-01.jpg",
+      "caption": "Masjid Soko Tunggal",
+      "place": "Yogyakarta",
+      "artist": "CEphoto, Uwe Aranas",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "source": "https://commons.wikimedia.org/wiki/File:Yogyakarta_Indonesia_Masjid-Soko-Tunggal-01.jpg"
+    },
+    {
+      "file": "Banten_Masjid_Agung_Banten.jpg",
+      "caption": "Masjid Agung Banten",
+      "place": "Serang, Banten",
+      "artist": "Kementerian Keuangan RI",
+      "license": "Domain publik",
+      "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+      "source": "https://commons.wikimedia.org/wiki/File:Banten_Masjid_Agung_Banten.jpg"
+    },
+    {
+      "file": "Kuta_Bali_Indonesia_Masjid-Agung-Ibnu-Batutah-02.jpg",
+      "caption": "Masjid Agung Ibnu Batutah",
+      "place": "Kuta, Bali",
+      "artist": "CEphoto, Uwe Aranas",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "source": "https://commons.wikimedia.org/wiki/File:Kuta_Bali_Indonesia_Masjid-Agung-Ibnu-Batutah-02.jpg"
+    },
+    {
+      "file": "Mosque_Dome_and_Minaret_in_Medan_Sumatra_Indonesia.jpg",
+      "caption": "Masjid Raya Medan",
+      "place": "Sumatera Utara",
+      "artist": "Pratyeka",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "source": "https://commons.wikimedia.org/wiki/File:Mosque_Dome_and_Minaret_in_Medan,_Sumatra,_Indonesia.jpg"
+    },
+    {
+      "file": "Inner_Masjid_Agung.jpg",
+      "caption": "Ruang utama masjid",
+      "place": "Interior",
+      "artist": "Irvan Cahyo N",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "source": "https://commons.wikimedia.org/wiki/File:Inner_Masjid_Agung.jpg"
+    }
+  ]
+}
