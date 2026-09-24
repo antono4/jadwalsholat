@@ -53,7 +53,7 @@
     return { name: c[0], lat: c[1], lng: c[2], tz: c[3], zone: c[4], iana: c[5] };
   });
 
-  /* --------------------------------- tabel UI -------------------------------- */
+  /* ----------------------------- linimasa waktu ------------------------------ */
   var TIMELINE = [
     { key: 'imsak', label: 'Imsak', ar: 'الإمْساك', abbr: 'Imsak' },
     { key: 'fajr', label: 'Subuh', ar: 'الصُّبْح', abbr: 'Subuh', sholat: true },
@@ -396,11 +396,18 @@
     } else {
       main = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
     }
-    $('[data-clock]').firstChild.nodeValue = main;
-    $('[data-clock-sec]').textContent = ':' + String(sec).padStart(2, '0');
+    var seconds = ':' + String(sec).padStart(2, '0');
+
+    // Dua permukaan jam: ringkas di bilah atas, besar di panel fokus.
+    $('[data-clock]').textContent = main;
+    $('[data-clock-sec]').textContent = seconds;
+    $('[data-clock-big]').firstChild.nodeValue = main;
+    $('[data-clockface-sec]').textContent = seconds;
+
     var zone = resolveZone(s, new Date());
     var label = zoneLabel(zone, new Date());
     $('[data-clock-ampm]').textContent = suffix ? suffix + ' · ' + label : label;
+    $('[data-clockface-zone]').textContent = suffix ? suffix + ' · ' + label : label;
   }
 
   function renderDates(now) {
@@ -415,62 +422,76 @@
       PT.GREGORIAN_MONTHS[now.getMonth()] + ' ' + now.getFullYear();
   }
 
-  function renderCards(now, ctx) {
-    var grid = $('[data-cards]');
+  function renderRail(now, ctx) {
     var T = ctx.todayTimes;
     var isFriday = now.getDay() === 5;
-    var tz = tzOffsetOf(state.settings, now);
     var use12 = state.settings.clockFormat === '12';
+    var anyPassed = false;
 
-    SHOLAT.forEach(function (item) {
-      var card = grid.querySelector('[data-card="' + item.key + '"]');
-      if (!card) return;
-
-      var name = item.key === 'dhuhr' && isFriday ? "Jum'at" : item.label;
-      card.querySelector('[data-card-name]').textContent = name;
-      card.querySelector('[data-card-ar]').textContent = item.ar;
+    SHOLAT.forEach(function (item, i) {
+      var stop = $('[data-card="' + item.key + '"]');
+      if (!stop) return;
 
       var todayTs = PT.toDate(ctx.today, T[item.key]).getTime();
       var isCurrent = ctx.current && ctx.current.key === item.key && !ctx.current.next && !ctx.current.prev;
       var isNext = ctx.next && ctx.next.key === item.key && !ctx.next.next;
       var isPast = todayTs < now && !isCurrent;
 
-      var timeText = formatClock(T[item.key], use12);
-      card.querySelector('[data-card-time]').textContent = timeText;
+      stop.querySelector('[data-card-name]').textContent =
+        item.key === 'dhuhr' && isFriday ? "Jum'at" : item.label;
+      stop.querySelector('[data-card-ar]').textContent = item.ar;
+      stop.querySelector('[data-card-time]').textContent = formatClock(T[item.key], use12);
 
-      card.classList.toggle('card--now', !!isCurrent);
-      card.classList.toggle('card--next', !!isNext && !isCurrent);
-      card.classList.toggle('card--past', !!isPast && !isCurrent && !isNext);
-      card.classList.toggle('card--jumuah', item.key === 'dhuhr' && isFriday);
+      stop.classList.toggle('stop--now', !!isCurrent);
+      stop.classList.toggle('stop--next', !!isNext && !isCurrent);
+      stop.classList.toggle('stop--past', !!isPast && !isCurrent && !isNext);
+      stop.classList.toggle('stop--jumuah', item.key === 'dhuhr' && isFriday);
 
-      var tag = card.querySelector('[data-card-tag]');
-      var hint = card.querySelector('[data-card-hint]');
-      if (isCurrent) {
-        tag.textContent = 'Berlangsung';
-        var elapsed = now - todayTs;
-        hint.textContent = 'sejak ' + formatClock(T[item.key], use12).replace(/\s?(AM|PM)$/i, '') + ' · ' + formatDuration(elapsed);
-      } else {
-        tag.textContent = 'Berikutnya';
-        hint.textContent = isNext && ctx.next.ts > todayTs ? 'dalam ' + formatDuration(ctx.next.ts - now) : 'hari ini';
+      // Urutan tidak lagi menyiratkan "berikutnya", jadi penanda harus eksplisit.
+      if (isCurrent) stop.setAttribute('aria-current', 'step');
+      else stop.removeAttribute('aria-current');
+
+      var state_ = stop.querySelector('[data-card-state]');
+      if (state_) {
+        state_.textContent = isCurrent ? 'Berlangsung' : isNext ? 'Berikutnya'
+          : isPast || anyPassed ? 'Selesai' : 'Menanti';
+      }
+      if (isPast || isCurrent) anyPassed = true;
+
+      // Bilah kecil menandai kemajuan menuju waktu ini.
+      var fill = stop.querySelector('[data-card-fill]');
+      if (fill) {
+        if (isCurrent) fill.style.width = '100%';
+        else if (isNext) {
+          var prevTs = ctx.current ? ctx.current.ts : todayTs;
+          var span = todayTs - prevTs;
+          fill.style.width = span > 0 ? Math.round(Math.min(1, Math.max(0, (now - prevTs) / span)) * 100) + '%' : '0%';
+        } else fill.style.width = isPast ? '100%' : '0%';
       }
     });
   }
 
-  function renderRing(now, ctx) {
+  function renderNextUp(now, ctx) {
     var total = ctx.next.ts - ctx.current.ts;
     var elapsed = now - ctx.current.ts;
     var frac = total > 0 ? Math.min(1, Math.max(0, elapsed / total)) : 0;
-    var C = 2 * Math.PI * 86;
-    var ring = $('[data-ring]');
-    ring.setAttribute('stroke-dasharray', C.toFixed(2));
-    ring.setAttribute('stroke-dashoffset', (C * (1 - frac)).toFixed(2));
+    var pct = Math.round(frac * 100);
 
     var isTomorrow = !!ctx.next.next;
     var name = ctx.next.key === 'dhuhr' && now.getDay() === 5 ? "Jum'at" : ctx.next.label;
+
     $('[data-next-name]').textContent = name + (isTomorrow ? ' (besok)' : '');
+    $('[data-next-ar]').textContent = ctx.next.ar || '—';
     $('[data-next-at]').textContent = 'pukul ' + formatClock(
       hourOfTs(ctx.next, ctx, now), state.settings.clockFormat === '12');
     $('[data-countdown]').textContent = formatCountdown(ctx.next.ts - now);
+    $('[data-next-span]').textContent = isTomorrow
+      ? 'selang ' + formatDuration(total)
+      : formatDuration(now - ctx.current.ts) + ' dari ' + formatDuration(total);
+
+    $('[data-next-bar]').style.width = pct + '%';
+    var bar = $('[data-next-progress]');
+    if (bar) bar.setAttribute('aria-valuenow', String(pct));
   }
 
   // Ambil jam desimal dari timestamp untuk penampilan.
@@ -497,28 +518,26 @@
     }
   }
 
-  function renderStrip(now, ctx) {
+  function renderTimes(now, ctx) {
     var T = ctx.todayTimes;
-    var Y = ctx.yesterdayTimes;
     var use12 = state.settings.clockFormat === '12';
     var sunrise = PT.toDate(ctx.today, T.sunrise).getTime();
     var sunset = PT.toDate(ctx.today, T.sunset).getTime();
-    var dayLen = sunset - sunrise;
 
     var items = [
       { label: 'Imsak', time: formatClock(T.imsak, use12), hint: '10 menit sebelum Subuh' },
       { label: 'Syuruq', time: formatClock(T.sunrise, use12), hint: 'Awal waktu dhuha' },
-      { label: 'Panjang siang', time: formatDuration(dayLen), hint: 'Terbit ke terbenam' },
-      { label: 'Tengah malam', time: formatClock(T.midnight, use12), hint: 'Sepertiga malam ' + formatClock(T.lastThird, use12) }
+      { label: 'Panjang siang', time: formatDuration(sunset - sunrise), hint: 'Terbit ke terbenam' },
+      { label: 'Tengah malam', time: formatClock(T.midnight, use12),
+        hint: 'Sepertiga malam ' + formatClock(T.lastThird, use12) }
     ];
 
-    var wrap = $('[data-strip]');
-    wrap.innerHTML = items.map(function (it) {
-      return '<div class="mini">' +
-        '<span class="mini__label">' + esc(it.label) + '</span>' +
-        '<span class="mini__time">' + esc(it.time) + '</span>' +
-        '<span class="mini__hint">' + esc(it.hint) + '</span>' +
-        '</div>';
+    $('[data-strip]').innerHTML = items.map(function (it) {
+      return '<li class="times__row">' +
+        '<span class="times__label">' + esc(it.label) + '</span>' +
+        '<span class="times__time">' + esc(it.time) + '</span>' +
+        '<span class="times__hint">' + esc(it.hint) + '</span>' +
+        '</li>';
     }).join('');
   }
 
@@ -660,14 +679,9 @@
     $('[data-arc-sun]').style.opacity = nowElev !== null && nowElev < -2 ? '.35' : '1';
 
     // Legenda ringkas.
-    var sunriseTs = PT.toDate(ctx.today, T.sunrise).getTime();
-    var sunsetTs = PT.toDate(ctx.today, T.sunset).getTime();
-    var dayMs = sunsetTs - sunriseTs;
     $('[data-arc-legend]').innerHTML =
       legend('Terbit', formatClock(T.sunrise, state.settings.clockFormat === '12')) +
-      legend('Terbenam', formatClock(T.sunset, state.settings.clockFormat === '12')) +
-      legend('Panjang siang', formatDuration(dayMs)) +
-      legend('Tengah malam', formatClock(T.midnight, state.settings.clockFormat === '12'));
+      legend('Terbenam', formatClock(T.sunset, state.settings.clockFormat === '12'));
   }
 
   function legend(k, v) {
@@ -926,10 +940,10 @@
     renderIdentity();
     renderDates(now);
     renderClock(now, tz);
-    renderCards(now, ctx);
-    renderRing(now, ctx);
+    renderRail(now, ctx);
+    renderNextUp(now, ctx);
     renderStatus(now, ctx);
-    renderStrip(now, ctx);
+    renderTimes(now, ctx);
     renderQibla();
     renderArc(now, ctx);
   }
@@ -954,8 +968,8 @@
     ctx.next = loc.next;
 
     renderClock(now, tzOffsetOf(state.settings, realNow));
-    renderCards(now, ctx);
-    renderRing(now, ctx);
+    renderRail(now, ctx);
+    renderNextUp(now, ctx);
     renderStatus(now, ctx);
     checkAdhan(now, ctx);
   }
@@ -990,22 +1004,23 @@
       var isToday = dateKey(date) === todayK;
       var isFri = date.getDay() === 5;
       rows += '<tr class="' + (isToday ? 'is-today ' : '') + (isFri ? 'is-friday' : '') + '">' +
-        '<td>' + PT.DAY_NAMES[date.getDay()] + ', ' + d + '</td>' +
-        '<td>' + h.day + ' ' + esc((PT.HIJRI_MONTHS[h.month - 1] || '').slice(0, 9)) + '</td>' +
-        cell(t.imsak, use12, 'dim') +
-        cell(t.fajr, use12, 'hl') +
-        cell(t.sunrise, use12, 'dim') +
-        cell(t.dhuhr, use12, 'hl') +
-        cell(t.asr, use12, 'hl') +
-        cell(t.maghrib, use12, 'hl') +
-        cell(t.isha, use12, 'hl') +
+        '<td data-l="Tanggal">' + PT.DAY_NAMES[date.getDay()] + ', ' + d + '</td>' +
+        '<td data-l="Hijriah">' + h.day + ' ' + esc((PT.HIJRI_MONTHS[h.month - 1] || '').slice(0, 9)) + '</td>' +
+        cell(t.imsak, use12, 'dim', 'Imsak') +
+        cell(t.fajr, use12, 'hl', 'Subuh') +
+        cell(t.sunrise, use12, 'dim', 'Syuruq') +
+        cell(t.dhuhr, use12, 'hl', 'Dzuhur') +
+        cell(t.asr, use12, 'hl', 'Ashar') +
+        cell(t.maghrib, use12, 'hl', 'Maghrib') +
+        cell(t.isha, use12, 'hl', 'Isya') +
         '</tr>';
     }
     $('[data-monthly-body]').innerHTML = rows;
   }
 
-  function cell(hours, use12, cls) {
-    return '<td class="num ' + cls + '">' + esc(formatClock(hours, use12)) + '</td>';
+  function cell(hours, use12, cls, label) {
+    return '<td class="num ' + cls + '" data-l="' + esc(label || '') + '">' +
+      esc(formatClock(hours, use12)) + '</td>';
   }
 
   /* ---------------------------------- modal --------------------------------- */
@@ -1037,6 +1052,79 @@
     }).join('');
   }
 
+  /* --------------------------- pengaturan: bagian ---------------------------- */
+  var PANES = [
+    { key: 'identitas', label: 'Identitas' },
+    { key: 'lokasi', label: 'Lokasi' },
+    { key: 'hisab', label: 'Hisab' },
+    { key: 'ihtiyati', label: 'Ihtiyati' },
+    { key: 'tampilan', label: 'Tampilan' },
+    { key: 'latar', label: 'Latar' }
+  ];
+
+  // Pratinjau tema: gradien kecil supaya nuansa terlihat sebelum dipilih.
+  var THEME_CARDS = [
+    { key: 'night', label: 'Malam mihrab', hint: 'Indigo gelap', a: '#101a33', b: '#c9a24a' },
+    { key: 'dawn', label: 'Fajar', hint: 'Krem hangat', a: '#f3e7d4', b: '#a9762a' },
+    { key: 'emerald', label: 'Zamrud', hint: 'Hijau tua', a: '#0a2620', b: '#c8a85a' }
+  ];
+
+  function buildTabs() {
+    var nav = $('[data-settings-tabs]');
+    if (!nav) return;
+    nav.innerHTML = PANES.map(function (p, i) {
+      return '<button class="tabs__btn" type="button" role="tab" data-tab="' + p.key + '"' +
+        ' aria-selected="' + (i === 0 ? 'true' : 'false') + '"' +
+        ' aria-controls="pane-' + p.key + '">' + esc(p.label) + '</button>';
+    }).join('');
+    $$('.pane', $('[data-settings-body]')).forEach(function (pane) {
+      pane.id = 'pane-' + pane.getAttribute('data-pane');
+      pane.setAttribute('role', 'tabpanel');
+    });
+  }
+
+  function selectPane(key) {
+    $$('[data-tab]').forEach(function (btn) {
+      btn.setAttribute('aria-selected', btn.getAttribute('data-tab') === key ? 'true' : 'false');
+    });
+    $$('.pane').forEach(function (pane) {
+      pane.hidden = pane.getAttribute('data-pane') !== key;
+    });
+  }
+
+  function buildThemePicker() {
+    var wrap = $('[data-theme-picker]');
+    if (!wrap) return;
+    wrap.innerHTML = THEME_CARDS.map(function (t) {
+      return '<button class="theme-card" type="button" role="radio" data-theme-pick="' + t.key + '"' +
+        ' aria-checked="false" aria-label="Nuansa ' + esc(t.label) + '">' +
+        '<span class="theme-card__swatch" style="--sw-a:' + t.a + ';--sw-b:' + t.b + '"></span>' +
+        '<span class="theme-card__label">' + esc(t.label) + '</span>' +
+        '<span class="theme-card__hint">' + esc(t.hint) + '</span>' +
+        '</button>';
+    }).join('');
+  }
+
+  function syncThemePicker() {
+    var current = $('[data-in="theme"]').value;
+    $$('[data-theme-pick]').forEach(function (btn) {
+      btn.setAttribute('aria-checked', btn.getAttribute('data-theme-pick') === current ? 'true' : 'false');
+    });
+  }
+
+  var THEME_ORDER = ['night', 'dawn', 'emerald'];
+
+  function cycleTheme() {
+    var current = $('[data-in="theme"]').value;
+    var next = THEME_ORDER[(THEME_ORDER.indexOf(current) + 1) % THEME_ORDER.length];
+    $('[data-in="theme"]').value = next;
+    state.settings.theme = next;
+    document.documentElement.setAttribute('data-theme', next);
+    saveSettings();
+    syncThemePicker();
+    toast('Nuansa: ' + next);
+  }
+
   function fillForm() {
     var s = state.settings;
     FORM_FIELDS.forEach(function (k) {
@@ -1050,6 +1138,7 @@
     });
     updateMethodNote();
     updateGalleryNote();
+    syncThemePicker();
   }
 
   function updateGalleryNote(listOverride) {
@@ -1091,8 +1180,25 @@
 
   function openSettings() {
     fillForm();
+    selectPane('identitas');
     stopGallery();
-    $('[data-modal-settings]').hidden = false;
+    var panel = $('[data-modal-settings]');
+    panel.hidden = false;
+    var first = $('[data-tab]', panel);
+    if (first) first.focus();
+  }
+
+  function openHelp() {
+    stopGallery();
+    var panel = $('[data-modal-help]');
+    panel.hidden = false;
+    var btn = $('[data-close-help]', panel);
+    if (btn) btn.focus();
+  }
+
+  function closeHelp() {
+    $('[data-modal-help]').hidden = true;
+    startGallery();
   }
 
   function closeSettings() {
@@ -1108,6 +1214,7 @@
     state.fired = {};
     recompute(new Date());
     renderGallery();
+    syncThemePicker();
     if (message) toast(message);
   }
 
@@ -1128,12 +1235,45 @@
 
     $('[data-in="method"]').addEventListener('change', updateMethodNote);
 
+    $$('[data-tab]').forEach(function (btn) {
+      btn.addEventListener('click', function () { selectPane(btn.getAttribute('data-tab')); });
+    });
+    $('[data-settings-tabs]').addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      var btns = $$('[data-tab]');
+      var i = btns.indexOf(document.activeElement);
+      if (i < 0) return;
+      e.preventDefault();
+      var n = e.key === 'ArrowRight' ? (i + 1) % btns.length : (i - 1 + btns.length) % btns.length;
+      btns[n].focus();
+      selectPane(btns[n].getAttribute('data-tab'));
+    });
+
+    $('[data-theme-picker]').addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-theme-pick]');
+      if (!btn) return;
+      var key = btn.getAttribute('data-theme-pick');
+      $('[data-in="theme"]').value = key;
+      state.settings.theme = key;
+      document.documentElement.setAttribute('data-theme', key);
+      saveSettings();
+      syncThemePicker();
+      renderGallery();
+    });
+
+    $('[data-help]').addEventListener('click', openHelp);
+    $$('[data-close-help]').forEach(function (el) {
+      el.addEventListener('click', closeHelp);
+    });
+
     $('[data-in="city"]').addEventListener('change', function () {
       var c = CITIES.filter(function (x) { return x.name === this.value; }.bind(this))[0];
       if (!c) return;
       $('[data-in="lat"]').value = c.lat;
       $('[data-in="lng"]').value = c.lng;
-      $('[data-in="tzMode"]').value = 'manual';
+      // Zona kota tetap dipakai (auto) agar label ramah dan DST tetap benar;
+      // offset hanya ditampilkan sebagai rujukan.
+      $('[data-in="tzMode"]').value = 'auto';
       $('[data-in="tzOffset"]').value = c.tz;
       toast('Lokasi disetel ke ' + c.name + ' (' + c.zone + ')');
     });
@@ -1182,12 +1322,15 @@
       if (e.target.matches('input, textarea, select')) return;
       if (e.key === 's' || e.key === 'S') { openSettings(); }
       if (e.key === 'm' || e.key === 'M') { openMonthly(); }
+      if (e.key === '?') { openHelp(); }
+      if (e.key === 't' || e.key === 'T') { cycleTheme(); }
       if (e.key === 'f' || e.key === 'F') { toggleFullscreen(); }
       if (e.key === 'ArrowLeft') { galleryStep(-1); }
       if (e.key === 'ArrowRight') { galleryStep(1); }
       if (e.key === ' ') { e.preventDefault(); toggleGalleryPause(); }
       if (e.key === 'Escape') {
         closeSettings();
+        closeHelp();
         $('[data-modal-monthly]').hidden = true;
         startGallery();
         hideAdhan();
@@ -1209,20 +1352,22 @@
     state.settings = loadSettings();
     document.documentElement.setAttribute('data-theme', state.settings.theme);
 
-    // Kerangka kartu dibangun sekali, lalu diperbarui tiap detik.
+    // Rel dibangun sekali, lalu diperbarui tiap detik.
     $('[data-cards]').innerHTML = SHOLAT.map(function (item) {
-      return '<article class="card" data-card="' + item.key + '">' +
-        '<span class="card__arabic" data-card-ar>' + esc(item.ar) + '</span>' +
-        '<span class="card__time" data-card-time>--:--</span>' +
-        '<span class="card__name" data-card-name>' + esc(item.label) + '</span>' +
-        '<div class="card__foot">' +
-          '<span data-card-hint>—</span>' +
-          '<span class="card__tag" data-card-tag></span>' +
-        '</div>' +
-        '</article>';
+      return '<li class="stop" data-card="' + item.key + '">' +
+        '<span class="stop__state" data-card-state>Menanti</span>' +
+        '<span class="stop__ar" data-card-ar>' + esc(item.ar) + '</span>' +
+        '<span class="stop__name" data-card-name>' + esc(item.label) + '</span>' +
+        '<span class="stop__time" data-card-time>--:--</span>' +
+        '<span class="stop__track" aria-hidden="true"><span class="stop__fill" data-card-fill></span></span>' +
+        '</li>';
     }).join('');
 
     populateSelects();
+    buildTabs();
+    buildThemePicker();
+    selectPane('identitas');
+    syncThemePicker();
     bind();
     bindGallery();
 
