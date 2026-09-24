@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="night">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dashboard jadwal sholat masjid dengan hisab astronomi, kalender Hijriah, arah kiblat, dan mode kiosk.">
+<meta name="theme-color" content="#080d1c">
+<title>Jadwal Sholat — Masjid Al-Ikhlas</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Manrope:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%95%8C%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+
+<!-- ============================ LATAR: filigri girih ============================ -->
+<div class="atmos" aria-hidden="true">
+  <svg class="atmos__lattice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <pattern id="girih" width="96" height="96" patternUnits="userSpaceOnUse">
+        <g fill="none" stroke="currentColor" stroke-width="1">
+          <rect x="24" y="24" width="48" height="48"/>
+          <rect x="24" y="24" width="48" height="48" transform="rotate(45 48 48)"/>
+          <path d="M48 4 62 24 48 44 34 24Z"/>
+          <path d="M48 52 62 72 48 92 34 72Z"/>
+          <path d="M4 48 24 34 44 48 24 62Z"/>
+          <path d="M52 48 72 34 92 48 72 62Z"/>
+        </g>
+      </pattern>
+      <radialGradient id="atmosFade" cx="50%" cy="18%" r="72%">
+        <stop offset="0%" stop-color="#fff" stop-opacity=".85"/>
+        <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+      </radialGradient>
+      <mask id="atmosMask">
+        <rect width="100%" height="100%" fill="url(#atmosFade)"/>
+      </mask>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#girih)" mask="url(#atmosMask)"/>
+  </svg>
+  <div class="atmos__aurora"></div>
+  <div class="atmos__grain"></div>
+  <div class="atmos__vignette"></div>
+</div>
+
+<div class="shell">
+
+  <!-- ================================ MASTHEAD ================================ -->
+  <header class="masthead reveal" style="--d:0">
+    <div class="masthead__mark">
+      <svg viewBox="0 0 44 44" class="mark" aria-hidden="true">
+        <path class="mark__ring" d="M22 2 42 22 22 42 2 22Z"/>
+        <path class="mark__ring mark__ring--in" d="M22 8 36 22 22 36 8 22Z"/>
+        <path class="mark__dome" d="M22 13c-4.2 2.1-6.4 5.2-6.4 8.9 0 2.6 1 4.7 2.6 6.3h7.6c1.6-1.6 2.6-3.7 2.6-6.3 0-3.7-2.2-6.8-6.4-8.9Zm-8.4 15.2h16.8v2.6H13.6Z"/>
+      </svg>
+    </div>
+    <div class="masthead__id">
+      <h1 class="masthead__name" data-mosque-name>Masjid Al-Ikhlas</h1>
+      <p class="masthead__addr" data-mosque-address>Jl. Melati Raya No. 12 · Jakarta Selatan</p>
+    </div>
+    <div class="masthead__meta">
+      <span class="chip chip--soft" data-hijri-chip>—</span>
+      <span class="chip chip--soft" data-method-chip>Kemenag RI</span>
+      <button class="iconbtn" type="button" data-open-settings title="Pengaturan (S)" aria-label="Buka pengaturan">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5Zm7.4-2.6.1-.9-.1-.9 1.7-1.3-1.7-2.9-2 .8a7.4 7.4 0 0 0-1.6-.9L15.4 4h-3.4l-.4 2.1a7.4 7.4 0 0 0-1.6.9l-2-.8-1.7 2.9L8 10.4l-.1.9.1.9-1.7 1.3 1.7 2.9 2-.8c.5.4 1 .7 1.6.9l.4 2.1h3.4l.4-2.1c.6-.2 1.1-.5 1.6-.9l2 .8 1.7-2.9Z"/></svg>
+      </button>
+      <button class="iconbtn" type="button" data-open-monthly title="Jadwal sebulan (M)" aria-label="Buka jadwal sebulan">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v2h10V2h2v2h2.5v18H2.5V4H5V2Zm12.5 8h-15v10h15Zm-11 3h4v4h-4Z"/></svg>
+      </button>
+      <button class="iconbtn" type="button" data-toggle-fullscreen title="Layar penuh (F)" aria-label="Mode layar penuh">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5v2H6v3Zm11-5h5v5h-2V6h-3ZM4 15h2v3h3v2H4Zm14 0h2v5h-5v-2h3Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================================== HERO ================================== -->
+  <section class="hero reveal" style="--d:1">
+    <div class="mihrab">
+
+      <!-- Kiri: hitung mundur -->
+      <div class="hero__count">
+        <div class="ring" data-ring-wrap>
+          <svg class="ring__svg" viewBox="0 0 200 200" aria-hidden="true">
+            <defs>
+              <linearGradient id="ringGold" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="var(--gold-2)"/>
+                <stop offset="55%" stop-color="var(--gold-1)"/>
+                <stop offset="100%" stop-color="var(--gold-3)"/>
+              </linearGradient>
+            </defs>
+            <circle class="ring__track" cx="100" cy="100" r="86"/>
+            <circle class="ring__progress" data-ring cx="100" cy="100" r="86"/>
+          </svg>
+          <div class="ring__inner">
+            <span class="ring__label">Menuju</span>
+            <span class="ring__prayer" data-next-name>—</span>
+            <span class="ring__count" data-countdown>--:--:--</span>
+            <span class="ring__at" data-next-at>pukul --:--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tengah: jam & tanggal -->
+      <div class="hero__clock">
+        <div class="clock" data-clock>--:--<span class="clock__sec" data-clock-sec>:--</span></div>
+        <div class="clock__ampm" data-clock-ampm>WIB</div>
+        <div class="dateline">
+          <p class="dateline__hijri"><span data-hijri-ar>—</span> <span data-hijri>—</span></p>
+          <p class="dateline__greg" data-greg>—</p>
+        </div>
+        <p class="hero__status" data-status>—</p>
+      </div>
+
+      <!-- Kanan: busur matahari -->
+      <div class="hero__arc">
+        <h2 class="arc__title">Perjalanan Matahari</h2>
+        <svg class="arc" viewBox="0 0 620 290" data-arc role="img" aria-label="Busur perjalanan matahari hari ini">
+          <defs>
+            <linearGradient id="dayFill" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stop-color="var(--gold-1)" stop-opacity=".02"/>
+              <stop offset="100%" stop-color="var(--gold-1)" stop-opacity=".22"/>
+            </linearGradient>
+            <linearGradient id="arcStroke" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="var(--gold-1)" stop-opacity=".15"/>
+              <stop offset="50%" stop-color="var(--gold-2)" stop-opacity=".95"/>
+              <stop offset="100%" stop-color="var(--gold-1)" stop-opacity=".15"/>
+            </linearGradient>
+            <radialGradient id="sunGlow">
+              <stop offset="0%" stop-color="#fff6de" stop-opacity="1"/>
+              <stop offset="45%" stop-color="var(--gold-2)" stop-opacity=".55"/>
+              <stop offset="100%" stop-color="var(--gold-2)" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+
+          <!-- cincin bantu langit -->
+          <g class="arc__grid">
+            <path d="M30 214 A280 280 0 0 1 590 214" />
+            <path d="M96 214 A214 214 0 0 1 524 214" />
+            <path d="M162 214 A148 148 0 0 1 458 214" />
+          </g>
+
+          <!-- bidang siang -->
+          <path class="arc__dayarea" data-arc-area d="" />
+          <path class="arc__line" data-arc-line d="" />
+
+          <!-- garis ufuk: y=214 harus sama dengan HORIZON di app.js -->
+          <line class="arc__horizon" x1="14" y1="214" x2="606" y2="214"/>
+          <text class="arc__horizon-label" x="606" y="210" text-anchor="end">UFUK</text>
+
+          <!-- penanda waktu -->
+          <g class="arc__marks" data-arc-marks></g>
+
+          <!-- matahari -->
+          <g class="arc__sun" data-arc-sun>
+            <circle r="30" fill="url(#sunGlow)"/>
+            <circle class="arc__sun-core" r="6.5"/>
+          </g>
+        </svg>
+        <div class="arc__legend" data-arc-legend></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ KARTU WAKTU SHOLAT ============================ -->
+  <section class="board reveal" style="--d:2">
+    <div class="board__grid" data-cards></div>
+  </section>
+
+  <!-- ============================== DERET SEKUNDER ============================== -->
+  <section class="strip reveal" style="--d:3">
+    <div class="strip__items" data-strip></div>
+    <div class="qibla" data-qibla-card>
+      <h2 class="qibla__title">Arah Kiblat</h2>
+      <div class="qibla__body">
+        <svg class="qibla__dial" viewBox="0 0 120 120" data-qibla-dial role="img" aria-label="Dial arah kiblat">
+          <circle class="qibla__ring" cx="60" cy="60" r="54"/>
+          <circle class="qibla__ring qibla__ring--in" cx="60" cy="60" r="42"/>
+          <g class="qibla__ticks" data-qibla-ticks></g>
+          <text class="qibla__n" x="60" y="17">U</text>
+          <text class="qibla__s" x="60" y="112">S</text>
+          <text class="qibla__w" x="7" y="64">B</text>
+          <text class="qibla__e" x="106" y="64">T</text>
+          <g class="qibla__needle" data-qibla-needle>
+            <path d="M60 16 66 60 60 68 54 60Z"/>
+          </g>
+          <circle class="qibla__hub" cx="60" cy="60" r="4"/>
+        </svg>
+        <div class="qibla__read">
+          <span class="qibla__deg" data-qibla-deg>—</span>
+          <span class="qibla__dir" data-qibla-dir>—</span>
+          <span class="qibla__dist" data-qibla-dist>—</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================== TICKER ================================== -->
+  <footer class="ticker reveal" style="--d:4">
+    <div class="ticker__badge" data-ticker-badge>INFO</div>
+    <div class="ticker__viewport">
+      <div class="ticker__track" data-ticker-track><span data-ticker-text></span></div>
+    </div>
+    <div class="ticker__hint">S pengaturan · M jadwal sebulan · F layar penuh</div>
+  </footer>
+</div>
+
+<!-- ============================ LAPISAN WAKTU ADZAN ============================ -->
+<div class="adhan" data-adhan hidden>
+  <div class="adhan__card">
+    <p class="adhan__kicker">Telah masuk waktu</p>
+    <p class="adhan__ar" data-adhan-ar>—</p>
+    <p class="adhan__name" data-adhan-name>—</p>
+    <p class="adhan__time" data-adhan-time>—</p>
+    <p class="adhan__call">Marilah menunaikan sholat</p>
+    <button class="btn btn--gold" type="button" data-adhan-close>Sudah siap</button>
+  </div>
+</div>
+
+<!-- =============================== MODAL PENGATURAN =============================== -->
+<div class="modal" data-modal-settings hidden>
+  <div class="modal__scrim" data-close-settings></div>
+  <div class="modal__panel" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <header class="modal__head">
+      <h2 id="setTitle">Pengaturan Dashboard</h2>
+      <button class="iconbtn" type="button" data-close-settings aria-label="Tutup">&times;</button>
+    </header>
+
+    <div class="modal__body">
+      <fieldset class="field-group">
+        <legend>Identitas Masjid</legend>
+        <label class="field">
+          <span>Nama masjid</span>
+          <input type="text" data-in="name" placeholder="Masjid Al-Ikhlas">
+        </label>
+        <label class="field">
+          <span>Alamat / keterangan</span>
+          <input type="text" data-in="address" placeholder="Jl. Melati Raya No. 12 · Jakarta Selatan">
+        </label>
+        <label class="field">
+          <span>Teks berjalan</span>
+          <textarea data-in="ticker" rows="2" placeholder="Pengumuman untuk jamaah…"></textarea>
+        </label>
+      </fieldset>
+
+      <fieldset class="field-group">
+        <legend>Lokasi &amp; Waktu</legend>
+        <label class="field">
+          <span>Kota terdekat</span>
+          <select data-in="city"></select>
+        </label>
+        <div class="field-row">
+          <label class="field">
+            <span>Lintang</span>
+            <input type="number" step="0.0001" data-in="lat">
+          </label>
+          <label class="field">
+            <span>Bujur</span>
+            <input type="number" step="0.0001" data-in="lng">
+          </label>
+        </div>
+        <div class="field-row">
+          <label class="field">
+            <span>Zona waktu</span>
+            <select data-in="tzMode">
+              <option value="auto">Otomatis (perangkat)</option>
+              <option value="manual">Manual (UTC)</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>UTC offset</span>
+            <input type="number" step="0.5" min="-12" max="14" data-in="tzOffset">
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="field-group">
+        <legend>Metode Hisab</legend>
+        <label class="field">
+          <span>Kriteria sudut Subuh / Isya</span>
+          <select data-in="method"></select>
+        </label>
+        <p class="field__note" data-method-note>—</p>
+        <div class="field-row">
+          <label class="field">
+            <span>Mazhab Ashar</span>
+            <select data-in="asr">
+              <option value="standard">Standar (Syafi'i, Maliki, Hambali)</option>
+              <option value="hanafi">Hanafi</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Lintang tinggi</span>
+            <select data-in="highLat"></select>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="field-group">
+        <legend>Penyesuaian Ihtiyati (menit)</legend>
+        <p class="field__note">Koreksi halus agar cocok dengan jadwal masjid setempat. Boleh minus.</p>
+        <div class="tune-grid" data-tune-grid></div>
+      </fieldset>
+
+      <fieldset class="field-group">
+        <legend>Tampilan</legend>
+        <div class="field-row">
+          <label class="field">
+            <span>Format jam</span>
+            <select data-in="clockFormat">
+              <option value="24">24 jam</option>
+              <option value="12">12 jam</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Nuansa warna</span>
+            <select data-in="theme">
+              <option value="night">Malam mihrab</option>
+              <option value="dawn">Fajar</option>
+              <option value="emerald">Zamrud</option>
+            </select>
+          </label>
+        </div>
+        <label class="switch">
+          <input type="checkbox" data-in="adhanSound">
+          <span class="switch__track"><span class="switch__dot"></span></span>
+          <span class="switch__text">Bunyi penanda waktu sholat</span>
+        </label>
+        <label class="switch">
+          <input type="checkbox" data-in="adhanOverlay">
+          <span class="switch__track"><span class="switch__dot"></span></span>
+          <span class="switch__text">Tampilkan layar penuh saat masuk waktu</span>
+        </label>
+      </fieldset>
+    </div>
+
+    <footer class="modal__foot">
+      <button class="btn btn--ghost" type="button" data-reset>Kembalikan bawaan</button>
+      <div class="modal__foot-right">
+        <button class="btn btn--ghost" type="button" data-close-settings>Batal</button>
+        <button class="btn btn--gold" type="button" data-save>Simpan</button>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- ============================== MODAL JADWAL SEBULAN ============================== -->
+<div class="modal" data-modal-monthly hidden>
+  <div class="modal__scrim" data-close-monthly></div>
+  <div class="modal__panel modal__panel--wide" role="dialog" aria-modal="true" aria-labelledby="monTitle">
+    <header class="modal__head">
+      <div>
+        <h2 id="monTitle">Jadwal Sebulan</h2>
+        <p class="modal__sub" data-monthly-sub>—</p>
+      </div>
+      <div class="modal__head-right">
+        <button class="iconbtn" type="button" data-month-prev aria-label="Bulan sebelumnya">&#8249;</button>
+        <button class="iconbtn" type="button" data-month-next aria-label="Bulan berikutnya">&#8250;</button>
+        <button class="btn btn--ghost" type="button" data-print>Cetak</button>
+        <button class="iconbtn" type="button" data-close-monthly aria-label="Tutup">&times;</button>
+      </div>
+    </header>
+    <div class="modal__body">
+      <table class="table">
+        <thead>
+          <tr>
+            <th class="table__date">Tanggal</th>
+            <th>Hijriah</th>
+            <th>Imsak</th><th>Subuh</th><th>Syuruq</th>
+            <th>Dzuhur</th><th>Ashar</th><th>Maghrib</th><th>Isya</th>
+          </tr>
+        </thead>
+        <tbody data-monthly-body></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="toast" data-toast hidden></div>
+
+<script src="prayer-times.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
