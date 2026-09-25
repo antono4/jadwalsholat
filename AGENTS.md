@@ -196,5 +196,15 @@ untuk Subuh/Ashar/Maghrib/Isya. Dzuhur berbeda ~2 menit karena ihtiyati Kemenag 
 - Bilah mode memakai `hidden` + `flex`; kelas `screen-view` disertai `flex` ditambah/dihapus
   (`hidden`) oleh `showView()`. Pola ini aman, tetapi jangan menambah `flex` di markup layar
   yang harus tersembunyi.
-- Uji terkait ada di luar repo (`/tmp/display_test.py`, `/tmp/display_robust_test.py`) dan
-  memakai `cdp.py` dengan server di `http://localhost:8000`.
+- Dua saklar kas berbeda maksudnya: `kasOn` menampilkan panel ringkas di papan, sedangkan
+  `kasReportOn` menyertakan layar penuh `laporanKas` dalam rotasi otomatis. Isi layar laporan
+  **selalu** dirender walau kedua saklar mati, karena tombol "Laporan Kas" di bilah simulator
+  harus tetap menampilkan angka; saklar hanya mengatur rotasi. Rotasi memakai `activeSlides()`
+  (dipakai `autoMode()`) dan `demoViews()` (dipakai `toggleDemoCycle()`); keduanya harus ikut
+  menghormati `kasReportOn`. Menambah layar ke `VIEWS` saja tidak cukup untuk rotasi.
+- Laporan kas menampilkan keempat pos dana meski bernilai nol (bar kosong), sama seperti panel
+  dasbor. Persentase "x% dari total" disembunyikan saat total masih nol agar tidak muncul empat
+  kali tulisan "0.0% dari total".
+- Uji terkait ada di luar repo (`/tmp/display_test.py`, `/tmp/display_robust_test.py`,
+  `/tmp/display_regress_test.py`, `/tmp/kas_report_test.py`) dan memakai `cdp.py` dengan server
+  di `http://localhost:12000`.
