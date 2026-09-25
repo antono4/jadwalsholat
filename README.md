@@ -40,6 +40,10 @@ python3 -m http.server 8000
 - **Teks berjalan** untuk pengumuman masjid.
 - **Layar penuh saat masuk waktu**, opsional, dengan bunyi penanda.
 
+Tampilan dashboard memakai bahasa visual yang sama dengan papan TV (`display.html`): panel kaca
+gelap dengan tepi tipis, aksen emas–zamrud, judul berhuruf gradien, dan angka jam bergaya tebal.
+Ketiga tema (malam, fajar, zamrud) tetap tersedia dan semuanya lolos ambang kontras 4,5:1.
+
 ## Pintasan papan tulis
 
 | Tombol | Fungsi |

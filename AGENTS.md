@@ -73,13 +73,42 @@ Titik temu DOM yang dipakai `app.js`:
   dengan mengganti warna teks ke `--txt-2`/`--txt-3`.
 - `--txt-2`/`--txt-3` sudah dinaikkan agar teks kecil lolos 4,5:1 di ketiga tema; menurunkannya
   kembali akan menggagalkan uji kontras.
+- Teks bergradien (`background-clip: text`) membuat `color` menjadi transparan, sehingga uji
+  kontras berbasis `color` akan membaca nilai palsu. Judul masjid memakai `--ink-title`
+  (terang di tema gelap, `#7d5416` di tema fajar) supaya tetap lolos ambang.
+- Lencana pengumuman memakai `--ink-emerald` di atas `rgba(16,185,129,.16)`. Saat mengukur
+  kontras, lapisan rgba tipis harus dikomposit dengan latar di bawahnya; kalau tidak,
+  kontras terukur jauh dari kenyataan (pernah terbaca 1,66 padahal sebenarnya lolos).
+
+## Bahasa visual (dipinjam dari `display.html`)
+
+`index.html` dan `display.html` memakai kosakata visual yang sama, tetapi sistemnya berbeda:
+`display.html` memakai Tailwind CDN dan mandiri, sedangkan `index.html` memakai token di
+`styles.css` supaya tiga tema tetap hidup.
+
+- Kaca: `--glass-a`/`--glass-b` (gradien 135°) dengan tepi putih transparan `--glass-edge`,
+  `backdrop-filter: blur(16px)` — meniru `.glass-panel`/`.glass-card` display.
+- Font: `Cinzel` (judul, tebal 700), `Plus Jakarta Sans` (badan), `Space Mono` (angka jam,
+  tebal 700). Jangan turunkan bobot angka ke 300 — angka papan display selalu tebal.
+- Aksen: emas `#eab308`/`#facc15` + zamrud `#10b981`; pendar `--glow` untuk kartu berjalan.
+- Foto latar penuh layar adalah latar utama; `data-dim` bawaan `soft` agar foto terlihat jelas.
+  Menaikkan peredupan ke `strong` akan menutupi foto.
+- Jangan menaruh `card-surface` pada `.ticker__badge`: bayangan panelnya bentrok dengan lencana.
+- Titik berdenyut lencana memakai pseudo-elemen `::before` karena `app.js` menimpa
+  `textContent` lencana, sehingga markah tambahan di dalamnya akan terhapus.
 
 ## Uji yang dipakai saat perombakan (di luar repo, di `/tmp`)
 
 Tidak ikut masuk repositori, tetapi berguna bila dijalankan lagi di lingkungan yang sama:
-`uiux_test.py`, `regress_test.py`, `bg_test.py`, `layout_test.py`, `contrast_test.py`,
-`geom_test.py`, `city_test.py`, ditambah pembantu `cdp.py`. Semuanya memakai Chrome DevTools
-Protocol dan mengharapkan server di `http://localhost:8000`.
+`contract_test.py` (40 pemeriksaan kontrak + kontras per tema), `display_test.py` (32),
+`display_robust_test.py` (17), ditambah pembantu `cdp.py`. Semuanya memakai Chrome DevTools
+Protocol. `contract_test.py` menerima URL dasar sebagai argumen; uji display masih menanam
+`http://localhost:12000` di dalam berkasnya.
+
+`contract_test.py` adalah jaring pengaman utama untuk perubahan gaya: ia memeriksa 73 titik temu
+DOM, 19 isian pengaturan, isi kartu sholat, kiblat, busur matahari, galeri, modal, tata letak di
+lima ukuran layar, dan kontras teks di ketiga tema. Jalankan sebelum dan sesudah mengubah
+`styles.css` — semuanya harus tetap 40/40.
 
 ## Referensi ketelitian hisab
 
