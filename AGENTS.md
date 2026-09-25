@@ -101,8 +101,9 @@ Titik temu DOM yang dipakai `app.js`:
 
 Tidak ikut masuk repositori, tetapi berguna bila dijalankan lagi di lingkungan yang sama:
 `contract_test.py` (40 pemeriksaan kontrak + kontras per tema), `display_test.py` (32),
-`display_robust_test.py` (17), ditambah pembantu `cdp.py`. Semuanya memakai Chrome DevTools
-Protocol. `contract_test.py` menerima URL dasar sebagai argumen; uji display masih menanam
+`display_robust_test.py` (17), `display_klik_test.py` (22, mengklik tombol sungguhan), ditambah
+pembantu `cdp.py`. Semuanya memakai Chrome DevTools Protocol. `contract_test.py` dan
+`display_klik_test.py` menerima URL dasar sebagai argumen; dua uji display lain masih menanam
 `http://localhost:12000` di dalam berkasnya.
 
 `contract_test.py` adalah jaring pengaman utama untuk perubahan gaya: ia memeriksa 73 titik temu
@@ -137,6 +138,15 @@ untuk Subuh/Ashar/Maghrib/Isya. Dzuhur berbeda ~2 menit karena ihtiyati Kemenag 
   menghormati `state.nowOverride` — dipakai oleh `window.DisplayTV.setNow()` saat menguji.
 - `window.DisplayTV` adalah antarmuka uji: `setNow`/`clearNow`, `apply`, `setMode`, `autoMode`,
   `times`, `resetSettings`. Uji mode otomatis sebaiknya menyuntikkan waktu, bukan menunggu.
+- Seluruh skrip halaman terkurung dalam IIFE. Tujuh fungsi dipanggil lewat `onclick="..."` pada
+  markah — `openSettingsModal`, `closeSettingsModal`, `saveSettingsModal`, `resetSettings`,
+  `switchMode`, `setAutoFollow`, `toggleDemoCycle` — dan harus diekspos ke `window`, karena
+  handler inline diselesaikan di lingkup global, bukan di dalam IIFE. Tanpa itu tombol setelan
+  dan sebelas tombol mode diam saja, **sementara pintasan papan tulis tetap jalan** karena
+  ditangani `addEventListener` di dalam IIFE. Karena itu uji wajib **mengklik tombolnya**, bukan
+  memanggil `window.DisplayTV.setMode()`: memanggil API uji akan melewati cacat ini sepenuhnya.
+  Jangan mengekspor ulang lewat `window.DisplayTV` saja — `onclick` mencari nama itu langsung di
+  `window`.
 - `AudioContext` dibuat sekali dan dipakai ulang. Jangan membuat `AudioContext` baru tiap kali
   adzan berbunyi: pada papan yang menyala berhari-hari, konteks akan menumpuk sampai peramban
   menolak membuat yang baru dan bunyi berhenti.

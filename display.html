@@ -1357,6 +1357,21 @@
   document.addEventListener('DOMContentLoaded', boot);
 
   /* ------------------------------- API uji ------------------------------- */
+  /* Handler inline pada markah (onclick="...") diselesaikan di lingkup global,
+     sedangkan seluruh skrip ini terkurung dalam IIFE. Tanpa blok ini tombol
+     setelan, tombol mode, dan tombol demo tidak bereaksi sama sekali —
+     sementara pintasan papan tulis tetap jalan karena ditangani lewat
+     addEventListener di dalam IIFE, sehingga cacat ini mudah terlewat. */
+  Object.assign(window, {
+    openSettingsModal: openSettingsModal,
+    closeSettingsModal: closeSettingsModal,
+    saveSettingsModal: saveSettingsModal,
+    resetSettings: resetSettings,
+    switchMode: switchMode,
+    setAutoFollow: setAutoFollow,
+    toggleDemoCycle: toggleDemoCycle
+  });
+
   window.DisplayTV = {
     state: state,
     settings: function () { return clone(state.settings); },
