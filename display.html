@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-slate-950 text-slate-100 select-none">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Display TV Masjid — Jadwal Sholat Otomatis</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%95%8C%3C/text%3E%3C/svg%3E">
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          arabic: ['"Amiri"', 'serif'],
+          display: ['"Cinzel"', 'serif'],
+          mono: ['"Space Mono"', 'monospace']
+        },
+        colors: {
+          gold: { 300: '#fde047', 400: '#facc15', 500: '#eab308', 600: '#ca8a04', 700: '#a16207' },
+          maroon: { 800: '#581c87', 900: '#3b0764', 950: '#2e1065' }
+        },
+        animation: {
+          'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          'marquee': 'marquee 28s linear infinite',
+          'spin-slow': 'spin 12s linear infinite'
+        },
+        keyframes: {
+          marquee: {
+            '0%': { transform: 'translateX(100%)' },
+            '100%': { transform: 'translateX(-100%)' }
+          }
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.8); }
+  ::-webkit-scrollbar-thumb { background: rgba(234, 179, 8, 0.5); border-radius: 4px; }
+
+  .glass-panel {
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .glass-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .glass-card-active {
+    background: linear-gradient(135deg, rgba(234, 179, 8, 0.3) 0%, rgba(14, 116, 144, 0.7) 100%);
+    border: 2px solid rgba(250, 204, 21, 0.9);
+    box-shadow: 0 0 25px rgba(250, 204, 21, 0.4);
+  }
+  .progress-ring__circle {
+    transition: stroke-dashoffset 0.35s;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+  .idle-cursor-hidden { cursor: none; }
+
+  /* Bilah simulator disembunyikan secara bawaan. Munculkan dengan Ctrl+Shift+D
+     atau tambahkan ?sim=1 pada URL. */
+  body:not(.sim-on) #remoteBar { display: none; }
+</style>
+</head>
+<body class="h-screen w-screen overflow-hidden font-sans bg-slate-950 text-slate-100 relative flex flex-col justify-between" id="appBody">
+
+<!-- =========================================================================
+     BILAH SIMULATOR (tersembunyi bawaan — hanya untuk uji/review)
+     ========================================================================= -->
+<div id="remoteBar" class="fixed top-2 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 backdrop-blur-md border border-gold-500/40 rounded-full px-3 py-1.5 shadow-2xl flex items-center gap-1.5 text-xs max-w-[98vw] overflow-x-auto">
+  <span class="text-[10px] font-bold text-gold-400 uppercase tracking-wider mr-1 flex items-center gap-1 whitespace-nowrap">
+    <i data-lucide="tv" class="w-3.5 h-3.5 text-gold-400"></i> Mode:
+  </span>
+  <button onclick="switchMode('layout03b')" id="btn-layout03b" class="mode-btn px-2.5 py-1 rounded-full bg-gold-500 text-slate-950 font-bold hover:bg-gold-400 whitespace-nowrap">Utama</button>
+  <button onclick="switchMode('menjelangAdzan')" id="btn-menjelangAdzan" class="mode-btn px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">Menjelang Adzan</button>
+  <button onclick="switchMode('saatAdzan')" id="btn-saatAdzan" class="mode-btn px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">Saat Adzan</button>
+  <button onclick="switchMode('doaAdzan')" id="btn-doaAdzan" class="mode-btn px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">Doa Adzan</button>
+  <button onclick="switchMode('countdownIqomah')" id="btn-countdownIqomah" class="mode-btn px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">Mundur Iqomah</button>
+  <button onclick="switchMode('saatIqomah')" id="btn-saatIqomah" class="mode-btn px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">Saat Iqomah</button>
+  <button onclick="switchMode('saatSholat')" id="btn-saatSholat" class="mode-btn px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">Saat Sholat</button>
+  <button onclick="switchMode('tayanganNiat')" id="btn-tayanganNiat" class="mode-btn px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">Slide 1</button>
+  <button onclick="switchMode('tayanganHp')" id="btn-tayanganHp" class="mode-btn px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">Slide 2</button>
+  <button onclick="switchMode('tayanganQuran')" id="btn-tayanganQuran" class="mode-btn px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">Slide 3</button>
+  <button onclick="switchMode('tayanganAyat')" id="btn-tayanganAyat" class="mode-btn px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">Slide 4</button>
+  <div class="h-4 w-px bg-slate-700 mx-1 shrink-0"></div>
+  <button onclick="setAutoFollow()" id="btn-autoFollow" class="px-2.5 py-1 rounded-full bg-emerald-600/30 text-emerald-300 border border-emerald-500/50 hover:bg-emerald-600 hover:text-white font-semibold whitespace-nowrap">Otomatis</button>
+  <button onclick="toggleDemoCycle()" id="btn-demoCycle" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 whitespace-nowrap">Demo Keliling</button>
+  <button onclick="openSettingsModal()" title="Pengaturan Display" class="p-1 rounded-full bg-slate-800 hover:bg-gold-500 hover:text-slate-950 text-slate-300 shrink-0">
+    <i data-lucide="settings" class="w-4 h-4"></i>
+  </button>
+</div>
+
+<!-- Tombol pengaturan tetap (untuk operator masjid) -->
+<button onclick="openSettingsModal()" title="Pengaturan (S)"
+        class="fixed top-2 right-2 z-40 p-1.5 rounded-full bg-slate-900/70 border border-slate-700 text-slate-400 opacity-25 hover:opacity-100 transition-opacity">
+  <i data-lucide="settings" class="w-4 h-4"></i>
+</button>
+
+<!-- =========================================================================
+     TAMPILAN UTAMA
+     ========================================================================= -->
+<div id="view-layout03b" class="screen-view h-full w-full flex flex-col justify-between p-3 lg:p-5 relative bg-slate-950">
+
+  <!-- Foto masjid penuh layar, berganti otomatis; panel kaca transparan di atasnya. -->
+  <div class="absolute inset-0 z-0 bg-cover bg-center opacity-30 transition-opacity duration-1000" id="heroBgFull"></div>
+  <div class="absolute inset-0 z-0 bg-cover bg-center opacity-0 transition-opacity duration-1000" id="heroBgFullAlt"></div>
+  <div class="absolute inset-0 z-0 bg-gradient-to-br from-slate-950/95 via-slate-950/85 to-amber-950/60"></div>
+
+  <header class="glass-panel p-3.5 lg:p-4 rounded-2xl border-gold-500/30 flex justify-between items-center shadow-2xl relative z-10">
+    <div class="flex items-center gap-4 min-w-0">
+      <div class="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-gradient-to-tr from-gold-500 to-emerald-600 flex items-center justify-center p-0.5 shadow-lg shrink-0">
+        <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+          <i data-lucide="building-2" class="w-7 h-7 lg:w-8 lg:h-8 text-gold-400"></i>
+        </div>
+      </div>
+      <div class="min-w-0">
+        <h1 id="dispMosqueName" class="text-xl lg:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gold-300 via-amber-200 to-white font-display tracking-wide truncate"></h1>
+        <p id="dispMosqueAddr" class="text-xs lg:text-sm text-slate-300 flex items-center gap-2 mt-0.5 flex-wrap"></p>
+      </div>
+    </div>
+    <div class="text-right flex items-center gap-4 shrink-0">
+      <div class="bg-slate-900/90 border border-gold-500/40 px-4 py-2 rounded-xl text-center shadow-xl">
+        <div id="dispNextLabel" class="text-[10px] text-emerald-400 uppercase font-bold tracking-widest">SHOLAT BERIKUTNYA</div>
+        <div id="dispNextPrayerTarget" class="text-lg lg:text-xl font-bold font-mono text-gold-400">--:--:--</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="grid grid-cols-12 gap-3 lg:gap-4 my-2 lg:my-3 flex-1 items-stretch overflow-hidden relative z-10">
+
+    <div class="col-span-12 lg:col-span-8 glass-panel rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden border-gold-500/20">
+      <div class="absolute inset-0 z-0 bg-cover bg-center opacity-45 transition-opacity duration-1000 scale-105" id="heroBgImg"></div>
+      <div class="absolute inset-0 z-0 bg-cover bg-center opacity-0 transition-opacity duration-1000 scale-105" id="heroBgImgAlt"></div>
+      <div class="absolute inset-0 z-0 bg-gradient-to-t from-slate-950 via-slate-950/50 to-transparent"></div>
+
+      <div class="relative z-10 flex justify-between items-center">
+        <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase flex items-center gap-1.5 backdrop-blur-md">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          INFO &amp; KEGIATAN MASJID
+        </span>
+        <span id="dispHeroCredit" class="text-[10px] text-slate-300/90 bg-slate-950/60 px-2.5 py-1 rounded-full backdrop-blur-md max-w-[60%] truncate"></span>
+      </div>
+
+      <div class="relative z-10 space-y-2 mt-auto">
+        <div class="bg-slate-950/90 backdrop-blur-md p-3.5 rounded-xl border border-gold-500/30 flex items-center justify-between">
+          <div class="flex items-center gap-3 min-w-0">
+            <i data-lucide="calendar-heart" class="w-6 h-6 text-gold-400 shrink-0"></i>
+            <div class="min-w-0">
+              <div class="text-[11px] text-slate-300 font-medium">AGENDA MENDATANG</div>
+              <div id="dispEventTitle" class="text-sm lg:text-base font-bold text-white truncate"></div>
+            </div>
+          </div>
+          <div class="bg-gold-500/20 border border-gold-500/40 text-gold-300 px-4 py-1.5 rounded-xl text-xs lg:text-sm font-extrabold font-mono shrink-0">
+            <span id="dispEventDays">0</span> HARI LAGI
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-span-12 lg:col-span-4 flex flex-col justify-between gap-2 lg:gap-3">
+
+      <div class="glass-panel p-3 lg:p-3.5 rounded-2xl border-gold-500/20 flex items-center justify-between">
+        <div>
+          <div id="dispDateDayName" class="text-xs font-extrabold uppercase tracking-widest text-gold-400">—</div>
+          <div id="dispDateMasehi" class="text-sm font-bold text-white">—</div>
+        </div>
+        <div class="text-right border-l border-slate-700/80 pl-3">
+          <div id="dispDateHijri" class="text-sm font-bold text-emerald-300 font-arabic">—</div>
+          <div id="dispPasaran" class="text-[10px] text-slate-400 uppercase font-semibold">—</div>
+        </div>
+      </div>
+
+      <div class="glass-panel p-3 lg:p-4 rounded-2xl border-gold-500/20 flex flex-col items-center justify-center relative overflow-hidden flex-1">
+        <div class="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full border-4 border-gold-500/40 bg-slate-900/90 shadow-2xl flex items-center justify-center">
+          <span class="absolute top-1 text-[11px] font-bold text-gold-400">12</span>
+          <span class="absolute right-2 text-[11px] font-bold text-slate-400">3</span>
+          <span class="absolute bottom-1 text-[11px] font-bold text-slate-400">6</span>
+          <span class="absolute left-2 text-[11px] font-bold text-slate-400">9</span>
+          <div id="analogHourHand" class="absolute w-1 h-9 lg:h-11 bg-gold-400 rounded-full origin-bottom bottom-1/2 left-1/2 -translate-x-1/2 shadow-md transition-transform duration-300"></div>
+          <div id="analogMinHand" class="absolute w-0.5 h-12 lg:h-14 bg-emerald-300 rounded-full origin-bottom bottom-1/2 left-1/2 -translate-x-1/2 shadow-md transition-transform duration-300"></div>
+          <div id="analogSecHand" class="absolute w-0.5 h-14 lg:h-16 bg-red-500 rounded-full origin-bottom bottom-1/2 left-1/2 -translate-x-1/2 transition-transform duration-75"></div>
+          <div class="w-3 h-3 bg-gold-400 rounded-full z-10 border-2 border-slate-900"></div>
+        </div>
+        <div id="dispDigitalClockText" class="mt-2 text-xl lg:text-2xl font-bold font-mono text-gold-400 tracking-wider"></div>
+      </div>
+
+      <div class="glass-panel p-3.5 rounded-2xl border-emerald-500/20 space-y-1.5 text-xs">
+        <div class="text-[10px] font-bold text-gold-400 uppercase tracking-wider border-b border-slate-800 pb-1 flex justify-between items-center">
+          <span>PETUGAS SHOLAT JUM'AT</span>
+          <span id="dispOfficerDate" class="text-slate-400">—</span>
+        </div>
+        <div class="flex justify-between gap-2">
+          <span class="text-slate-400 shrink-0">Khotib dan Imam:</span>
+          <span id="dispKhatib" class="font-bold text-white text-right"></span>
+        </div>
+        <div class="flex justify-between gap-2">
+          <span class="text-slate-400 shrink-0">Bilal:</span>
+          <span id="dispBilal" class="font-bold text-white text-right"></span>
+        </div>
+        <div class="flex justify-between gap-2">
+          <span class="text-slate-400 shrink-0">Imam pengganti:</span>
+          <span id="dispImamPengganti" class="font-bold text-white text-right"></span>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="grid grid-cols-6 gap-2 lg:gap-3 relative z-10">
+    <div id="card-subuh" class="glass-card p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
+      <div class="text-[11px] font-extrabold text-emerald-300 tracking-wider">Subuh</div>
+      <div data-time="fajr" class="text-lg lg:text-2xl font-black font-mono text-white mt-0.5">--:--</div>
+    </div>
+    <div id="card-dhuha" class="glass-card p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
+      <div class="text-[11px] font-extrabold text-amber-300 tracking-wider">Dhuha</div>
+      <div data-time="dhuha" class="text-lg lg:text-2xl font-black font-mono text-white mt-0.5">--:--</div>
+    </div>
+    <div id="card-dzuhur" class="glass-card p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
+      <div class="text-[11px] font-extrabold text-emerald-300 tracking-wider">Dzuhur</div>
+      <div data-time="dhuhr" class="text-lg lg:text-2xl font-black font-mono text-white mt-0.5">--:--</div>
+    </div>
+    <div id="card-ashar" class="glass-card p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
+      <div class="text-[11px] font-extrabold text-emerald-300 tracking-wider">Ashar</div>
+      <div data-time="asr" class="text-lg lg:text-2xl font-black font-mono text-white mt-0.5">--:--</div>
+    </div>
+    <div id="card-maghrib" class="glass-card p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
+      <div class="text-[11px] font-extrabold text-emerald-300 tracking-wider">Maghrib</div>
+      <div data-time="maghrib" class="text-lg lg:text-2xl font-black font-mono text-white mt-0.5">--:--</div>
+    </div>
+    <div id="card-isya" class="glass-card p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
+      <div class="text-[11px] font-extrabold text-emerald-300 tracking-wider">Isya'</div>
+      <div data-time="isha" class="text-lg lg:text-2xl font-black font-mono text-white mt-0.5">--:--</div>
+    </div>
+  </footer>
+
+  <div class="mt-2 bg-slate-900/90 border border-gold-500/30 rounded-lg px-4 py-1.5 overflow-hidden flex items-center relative z-10">
+    <div class="text-xs font-bold text-gold-400 bg-gold-500/20 px-2 py-0.5 rounded mr-3 whitespace-nowrap shrink-0">INFO</div>
+    <div class="overflow-hidden w-full whitespace-nowrap">
+      <div id="dispRunningText" class="inline-block animate-marquee text-xs lg:text-sm font-medium text-slate-200"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================== MENJELANG ADZAN ========================== -->
+<div id="view-menjelangAdzan" class="screen-view hidden h-full w-full flex-col justify-between p-6 bg-slate-950 relative">
+  <div class="text-center mt-6">
+    <h2 class="text-3xl lg:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-gold-400 to-amber-200 uppercase tracking-widest font-display">
+      Menjelang Adzan <span class="prayer-now text-gold-400">—</span>
+    </h2>
+  </div>
+
+  <div class="flex flex-col items-center justify-center my-auto">
+    <div class="relative w-64 h-64 lg:w-80 lg:h-80 flex items-center justify-center">
+      <svg class="w-full h-full" viewBox="0 0 100 100">
+        <circle class="text-slate-800" stroke-width="6" stroke="currentColor" fill="transparent" r="42" cx="50" cy="50"/>
+        <circle id="adzanProgressRing" class="text-gold-400 progress-ring__circle" stroke-width="7" stroke-linecap="round" stroke="currentColor" fill="transparent" r="42" cx="50" cy="50" stroke-dasharray="263.89" stroke-dashoffset="0"/>
+      </svg>
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <span id="adzanSecsCount" class="text-6xl lg:text-8xl font-black font-mono text-white tracking-tighter">--</span>
+        <span class="text-xs lg:text-sm text-slate-400 uppercase tracking-widest mt-1">detik</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex justify-between items-center bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl text-xs lg:text-sm">
+    <div class="flex items-center gap-2 text-slate-300">
+      <i data-lucide="clock" class="w-4 h-4 text-gold-400"></i>
+      <span data-strip-clock="a">--:--:--</span>
+    </div>
+    <div class="bg-red-950/80 text-gold-300 border border-red-800/80 px-4 py-1.5 rounded-xl font-bold">
+      Adzan <span class="prayer-next">—</span> <span data-time="nextPrayer">--:--</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================= SAAT ADZAN ============================ -->
+<div id="view-saatAdzan" class="screen-view hidden h-full w-full flex-col justify-between p-6 bg-gradient-to-br from-maroon-950 via-slate-950 to-maroon-900 relative">
+  <div class="text-center mt-10">
+    <h2 class="text-4xl lg:text-6xl font-black text-amber-200 tracking-wider uppercase font-display">
+      Saat Adzan <span class="prayer-now text-gold-400">—</span>
+    </h2>
+  </div>
+
+  <div class="max-w-3xl w-full mx-auto my-auto space-y-4">
+    <div class="w-full bg-slate-900/90 h-7 rounded-full border border-gold-500/40 p-1 overflow-hidden shadow-2xl">
+      <div id="adzanBarFill" class="bg-gradient-to-r from-gold-500 via-amber-400 to-amber-200 h-full rounded-full transition-all duration-1000" style="width:0%"></div>
+    </div>
+    <p class="text-center text-sm lg:text-base text-slate-400">Kumandang adzan sedang berlangsung</p>
+  </div>
+
+  <div class="flex justify-between items-center bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl text-xs lg:text-sm">
+    <div class="flex items-center gap-2 text-slate-300">
+      <i data-lucide="clock" class="w-4 h-4 text-gold-400"></i>
+      <span data-strip-clock="b">--:--:--</span>
+    </div>
+    <div class="bg-amber-950/80 text-amber-300 border border-amber-700/60 px-4 py-1.5 rounded-xl font-bold">
+      Iqomah <span id="adzanIqomahTimerSub">--:--</span>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== DOA SETELAH ADZAN / MUNDUR IQOMAH ==================== -->
+<div id="view-doaAdzan" class="screen-view hidden h-full w-full flex-col justify-between p-6 bg-gradient-to-br from-emerald-950 via-slate-950 to-emerald-900 relative">
+  <div class="text-center mt-2">
+    <h2 class="text-3xl lg:text-5xl font-extrabold text-white uppercase tracking-wider font-sans">
+      Menjelang Iqomah <span class="prayer-now text-gold-400">—</span>
+    </h2>
+  </div>
+
+  <div class="flex items-center justify-center max-w-4xl w-full mx-auto my-auto gap-8 lg:gap-16">
+    <div class="bg-red-950/90 border border-red-800/80 p-3 lg:p-4 rounded-full w-28 h-28 lg:w-36 lg:h-36 flex flex-col items-center justify-center shadow-2xl text-center shrink-0">
+      <div class="w-12 h-12 rounded-full border-2 border-gold-400 relative flex items-center justify-center mb-1">
+        <div id="doaAnalogHour" class="absolute w-1 h-3 bg-white rounded-full origin-bottom bottom-1/2 left-1/2 -translate-x-1/2"></div>
+        <div id="doaAnalogMin" class="absolute w-0.5 h-4 bg-gold-400 rounded-full origin-bottom bottom-1/2 left-1/2 -translate-x-1/2"></div>
+      </div>
+      <div class="text-[9px] text-slate-300 uppercase font-bold">Iqomah <span class="prayer-next">—</span></div>
+      <div data-time="iqomahAt" class="text-xs font-bold text-white font-mono">--:--</div>
+    </div>
+
+    <div id="doaBigTimer" class="text-7xl lg:text-9xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_35px_rgba(255,255,255,0.4)]">--:--</div>
+  </div>
+
+  <div class="max-w-4xl mx-auto text-center space-y-2 bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+    <div class="font-arabic text-xl lg:text-3xl text-amber-200 leading-relaxed">
+      اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلاَةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ
+    </div>
+    <p class="text-xs lg:text-sm text-slate-300">
+      "Ya Allah, Rabb pemilik panggilan yang sempurna ini dan sholat yang didirikan, berilah Nabi Muhammad wasilah dan keutamaan..."
+    </p>
+  </div>
+</div>
+
+<!-- ========================= MUNDUR IQOMAH ========================= -->
+<div id="view-countdownIqomah" class="screen-view hidden h-full w-full flex-col justify-between p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 relative">
+  <div class="text-center mt-4">
+    <h2 class="text-3xl lg:text-5xl font-extrabold text-white uppercase tracking-wider font-sans">
+      Menjelang Iqomah <span class="prayer-now text-gold-400">—</span>
+    </h2>
+  </div>
+
+  <div class="flex items-center justify-center max-w-4xl w-full mx-auto my-auto gap-8 lg:gap-16">
+    <div class="bg-red-950/90 border border-red-800/80 p-3 lg:p-4 rounded-full w-28 h-28 lg:w-36 lg:h-36 flex flex-col items-center justify-center shadow-2xl text-center shrink-0">
+      <div class="w-12 h-12 rounded-full border-2 border-gold-400 relative flex items-center justify-center mb-1">
+        <div id="iqomahAnalogHour" class="absolute w-1 h-3 bg-white rounded-full origin-bottom bottom-1/2 left-1/2 -translate-x-1/2"></div>
+        <div id="iqomahAnalogMin" class="absolute w-0.5 h-4 bg-gold-400 rounded-full origin-bottom bottom-1/2 left-1/2 -translate-x-1/2"></div>
+      </div>
+      <div class="text-[9px] text-slate-300 uppercase font-bold">Iqomah <span class="prayer-next">—</span></div>
+      <div data-time="iqomahAt" class="text-xs font-bold text-white font-mono">--:--</div>
+    </div>
+
+    <div id="iqomahBigTimer" class="text-7xl lg:text-9xl font-black font-mono text-white tracking-tight drop-shadow-[0_0_35px_rgba(255,255,255,0.4)]">--:--</div>
+  </div>
+
+  <div id="iqomahNotice" class="bg-slate-900/90 border border-slate-700/80 p-3.5 rounded-2xl text-center text-xs lg:text-sm text-slate-200 max-w-2xl mx-auto shadow-xl"></div>
+</div>
+
+<!-- ========================== SAAT IQOMAH ========================== -->
+<div id="view-saatIqomah" class="screen-view hidden h-full w-full flex-col justify-between p-8 bg-slate-950 text-center relative">
+  <div class="my-auto space-y-6 max-w-4xl mx-auto">
+    <h2 class="text-4xl lg:text-6xl font-black text-amber-200 tracking-wider uppercase font-display">
+      Saat Iqomah <span class="prayer-now text-white">—</span>
+    </h2>
+    <div class="w-24 h-1 bg-gold-400 mx-auto rounded-full"></div>
+    <blockquote class="text-2xl lg:text-4xl font-bold text-slate-100 leading-relaxed font-sans">
+      "Luruskan shaf-shaf kalian, karena sesungguhnya meluruskan shaf termasuk kesempurnaan sholat."
+    </blockquote>
+  </div>
+</div>
+
+<!-- ========================== SAAT SHOLAT ========================== -->
+<div id="view-saatSholat" class="screen-view hidden h-full w-full flex-col justify-between p-8 bg-black text-center relative">
+  <div class="my-auto space-y-6 flex flex-col items-center">
+    <div class="w-48 h-48 lg:w-64 lg:h-64 rounded-full border-4 border-slate-800 bg-slate-950 relative flex items-center justify-center shadow-2xl">
+      <div id="sholatAnalogHour" class="absolute w-1.5 h-16 bg-slate-200 rounded-full origin-bottom bottom-1/2 left-1/2 -translate-x-1/2"></div>
+      <div id="sholatAnalogMin" class="absolute w-1 h-24 bg-gold-400 rounded-full origin-bottom bottom-1/2 left-1/2 -translate-x-1/2"></div>
+      <div class="w-4 h-4 bg-gold-400 rounded-full z-10"></div>
+    </div>
+    <h2 class="text-3xl lg:text-5xl font-black text-slate-300 tracking-wide">Saat Ibadah Sholat</h2>
+    <div class="prayer-now text-4xl lg:text-6xl font-extrabold text-gold-400 tracking-wider font-display">—</div>
+  </div>
+</div>
+
+<!-- ===================== SLIDE 1 — PERHATIKAN NIATMU ===================== -->
+<div id="view-tayanganNiat" class="screen-view hidden h-full w-full flex-col justify-between p-6 bg-gradient-to-br from-blue-950 via-slate-950 to-slate-900 relative">
+  <div class="my-auto max-w-5xl w-full mx-auto grid grid-cols-12 gap-6 items-center">
+    <div class="col-span-5 flex justify-center">
+      <div class="w-64 h-64 lg:w-80 lg:h-80 bg-slate-900/80 rounded-3xl p-6 border border-slate-700 flex items-center justify-center shadow-2xl">
+        <svg viewBox="0 0 200 200" class="w-full h-full text-gold-400">
+          <circle cx="100" cy="60" r="28" fill="currentColor" opacity="0.9"/>
+          <path d="M50,170 C50,125 70,105 100,105 C130,105 150,125 150,170 Z" fill="currentColor" opacity="0.7"/>
+          <rect x="70" y="115" width="60" height="40" rx="10" fill="#38bdf8" opacity="0.9"/>
+          <path d="M85,130 L115,130 M85,140 L105,140" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+    <div class="col-span-7 space-y-4">
+      <h2 class="text-2xl lg:text-4xl font-extrabold text-white tracking-wide font-sans">PERHATIKAN NIATMU</h2>
+      <div class="text-3xl lg:text-5xl font-arabic text-amber-200 leading-relaxed">إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ</div>
+      <p class="text-lg lg:text-2xl font-semibold text-slate-200">Sesungguhnya amal itu tergantung niatnya (HR. Bukhari-Muslim)</p>
+    </div>
+  </div>
+  <div class="flex justify-between items-center text-xs lg:text-sm text-slate-300">
+    <div class="flex items-center gap-2">
+      <i data-lucide="clock" class="w-4 h-4 text-gold-400"></i>
+      <span data-strip-clock="slide">--:--:--</span>
+    </div>
+    <div class="bg-red-950/80 text-gold-300 border border-red-800/80 px-4 py-1.5 rounded-xl font-bold">
+      Adzan <span class="prayer-now">—</span> <span data-time="nextPrayer">--:--</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SLIDE 2 — MATIKAN HP ===================== -->
+<div id="view-tayanganHp" class="screen-view hidden h-full w-full flex-col justify-between p-6 bg-gradient-to-br from-sky-900 via-slate-950 to-blue-950 relative">
+  <div class="text-center mt-6">
+    <h2 class="text-3xl lg:text-5xl font-black text-white tracking-wide">Harap tenang...</h2>
+  </div>
+  <div class="my-auto flex items-center justify-center gap-12 lg:gap-20">
+    <div class="flex flex-col items-center gap-3">
+      <div class="w-36 h-36 lg:w-48 lg:h-48 rounded-full bg-slate-900/90 border-4 border-slate-700 flex items-center justify-center shadow-2xl">
+        <i data-lucide="volume-x" class="w-20 h-20 text-sky-400"></i>
+      </div>
+    </div>
+    <div class="flex flex-col items-center gap-3">
+      <div class="w-36 h-36 lg:w-48 lg:h-48 rounded-full bg-slate-900/90 border-4 border-red-500/80 flex items-center justify-center shadow-2xl relative">
+        <i data-lucide="smartphone" class="w-20 h-20 text-red-400"></i>
+        <div class="absolute w-28 h-1 bg-red-500 rotate-45"></div>
+      </div>
+      <span class="text-2xl lg:text-4xl font-extrabold text-white mt-2">Matikan HP...</span>
+    </div>
+  </div>
+  <div class="flex justify-between items-center text-xs lg:text-sm text-slate-300">
+    <div class="flex items-center gap-2">
+      <i data-lucide="clock" class="w-4 h-4 text-gold-400"></i>
+      <span data-strip-clock="slide">--:--:--</span>
+    </div>
+    <div class="bg-red-950/80 text-gold-300 border border-red-800/80 px-4 py-1.5 rounded-xl font-bold">
+      Adzan <span class="prayer-now">—</span> <span data-time="nextPrayer">--:--</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SLIDE 3 — KEUTAMAAN QURAN ===================== -->
+<div id="view-tayanganQuran" class="screen-view hidden h-full w-full flex-col justify-between p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-amber-950/50 relative">
+  <div class="my-auto max-w-4xl mx-auto text-center space-y-6">
+    <div class="text-3xl lg:text-6xl font-arabic text-amber-200 leading-relaxed font-bold">
+      خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ
+    </div>
+    <p class="text-xl lg:text-3xl font-semibold text-slate-100 max-w-2xl mx-auto">
+      Sebaik-baik orang di antara kamu adalah orang yang belajar Al Qur'an dan mengajarkannya
+    </p>
+    <p class="text-sm lg:text-lg text-gold-400 font-bold">( HR. Bukhari )</p>
+  </div>
+  <div class="flex justify-between items-center text-xs lg:text-sm text-slate-300">
+    <div class="flex items-center gap-2">
+      <i data-lucide="clock" class="w-4 h-4 text-gold-400"></i>
+      <span data-strip-clock="slide">--:--:--</span>
+    </div>
+    <div class="bg-red-950/80 text-gold-300 border border-red-800/80 px-4 py-1.5 rounded-xl font-bold">
+      Adzan <span class="prayer-now">—</span> <span data-time="nextPrayer">--:--</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SLIDE 4 — POSTER AYAT ===================== -->
+<div id="view-tayanganAyat" class="screen-view hidden h-full w-full flex-col justify-between p-6 relative overflow-hidden bg-slate-950">
+  <div class="absolute inset-0 z-0 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1600&auto=format&fit=crop');"></div>
+  <div class="absolute inset-0 z-0 bg-slate-950/70 backdrop-blur-sm"></div>
+
+  <div class="relative z-10 my-auto max-w-4xl mx-auto text-center space-y-6">
+    <div class="text-3xl lg:text-5xl font-arabic text-white leading-relaxed font-bold">
+      إِنَّ الَّذِينَ يَخْشَوْنَ رَبَّهُمْ بِالْغَيْبِ لَهُمْ مَغْفِرَةٌ وَأَجْرٌ كَبِيرٌ
+    </div>
+    <p class="text-lg lg:text-2xl font-semibold text-amber-200">
+      Mereka akan mendapatkan pengampunan dan pahala yang besar di akhirat.
+    </p>
+  </div>
+
+  <div class="relative z-10 flex justify-between items-center text-xs lg:text-sm text-slate-300">
+    <div class="flex items-center gap-2">
+      <i data-lucide="clock" class="w-4 h-4 text-gold-400"></i>
+      <span data-strip-clock="slide">--:--:--</span>
+    </div>
+    <div class="bg-red-950/80 text-gold-300 border border-red-800/80 px-4 py-1.5 rounded-xl font-bold">
+      Adzan <span class="prayer-now">—</span> <span data-time="nextPrayer">--:--</span>
+    </div>
+  </div>
+</div>
+
+<!-- ========================= MODAL PENGATURAN ========================= -->
+<div id="settingsModal" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-4 hidden">
+  <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-3xl max-h-[88vh] flex flex-col shadow-2xl overflow-hidden text-xs">
+    <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+      <h3 class="text-sm font-bold text-gold-400 flex items-center gap-2">
+        <i data-lucide="sliders" class="w-4 h-4"></i> Pengaturan TV Display Masjid
+      </h3>
+      <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <div class="p-5 overflow-y-auto space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="block font-medium mb-1 text-slate-300">Nama Masjid</label>
+          <input type="text" id="cfgMosqueName" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white focus:border-gold-400 outline-none">
+        </div>
+        <div>
+          <label class="block font-medium mb-1 text-slate-300">Kota (untuk zona waktu &amp; jadwal)</label>
+          <select id="cfgCity" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white focus:border-gold-400 outline-none"></select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-medium mb-1 text-slate-300">Alamat Ringkas</label>
+        <input type="text" id="cfgMosqueAddr" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white focus:border-gold-400 outline-none">
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="block font-medium mb-1 text-slate-300">Metode Hisab</label>
+          <select id="cfgMethod" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white focus:border-gold-400 outline-none"></select>
+        </div>
+        <div>
+          <label class="block font-medium mb-1 text-slate-300">Mazhab Ashar</label>
+          <select id="cfgAsr" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white focus:border-gold-400 outline-none">
+            <option value="standard">Standar (Syafi'i)</option>
+            <option value="hanafi">Hanafi</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <div>
+          <label class="block font-medium mb-1 text-slate-300">Mundur Adzan (detik)</label>
+          <input type="number" id="cfgAdzanCountdown" min="10" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+        </div>
+        <div>
+          <label class="block font-medium mb-1 text-slate-300">Durasi Adzan (detik)</label>
+          <input type="number" id="cfgAdzanDuration" min="30" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+        </div>
+        <div>
+          <label class="block font-medium mb-1 text-slate-300">Durasi Iqomah (menit)</label>
+          <input type="number" id="cfgIqomahMins" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+        </div>
+        <div>
+          <label class="block font-medium mb-1 text-slate-300">Durasi Sholat (menit)</label>
+          <input type="number" id="cfgSholatMins" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+        </div>
+        <div>
+          <label class="block font-medium mb-1 text-slate-300">Jeda Dhuha (menit)</label>
+          <input type="number" id="cfgDhuhaOffset" min="0" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+        </div>
+        <div>
+          <label class="block font-medium mb-1 text-slate-300">Slide muncul (menit sebelum)</label>
+          <input type="number" id="cfgSlideLead" min="0" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div>
+          <label class="block font-medium mb-1 text-slate-300">Khotib dan Imam</label>
+          <input type="text" id="cfgKhatib" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+        </div>
+        <div>
+          <label class="block font-medium mb-1 text-slate-300">Bilal</label>
+          <input type="text" id="cfgBilal" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+        </div>
+        <div>
+          <label class="block font-medium mb-1 text-slate-300">Imam Pengganti</label>
+          <input type="text" id="cfgImam" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="block font-medium mb-1 text-slate-300">Judul Agenda</label>
+          <input type="text" id="cfgEventTitle" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+        </div>
+        <div>
+          <label class="block font-medium mb-1 text-slate-300">Tanggal Agenda</label>
+          <input type="date" id="cfgEventDate" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div class="md:col-span-2">
+          <label class="block font-medium mb-1 text-slate-300">Daftar Foto Latar (satu URL per baris, tampil bergantian)</label>
+          <textarea id="cfgGallery" rows="4" spellcheck="false" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white font-mono text-[11px]"></textarea>
+        </div>
+        <div>
+          <label class="block font-medium mb-1 text-slate-300">Jeda Ganti Foto (detik)</label>
+          <input type="number" id="cfgGalleryInterval" min="4" max="600" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+          <label class="block font-medium mb-1 mt-3 text-slate-300">Foto Tunggal (opsional)</label>
+          <input type="url" id="cfgHeroImage" placeholder="https://..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-medium mb-1 text-slate-300">Running Text</label>
+        <textarea id="cfgRunningText" rows="3" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"></textarea>
+      </div>
+    </div>
+
+    <div class="p-3 border-t border-slate-800 bg-slate-950 flex items-center justify-between gap-2">
+      <button onclick="resetSettings()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-400">Kembalikan bawaan</button>
+      <div class="flex gap-2">
+        <button onclick="closeSettingsModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-300">Batal</button>
+        <button onclick="saveSettingsModal()" class="px-4 py-1.5 bg-gold-500 hover:bg-gold-400 text-slate-950 font-bold rounded">Simpan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="prayer-times.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var PT = window.PrayerTimes;
+  var STORE_KEY = 'jadwal-sholat-tv/v1';
+
+  var PRAYERS = [
+    { key: 'fajr', label: 'Subuh', card: 'card-subuh' },
+    { key: 'dhuhr', label: 'Dzuhur', card: 'card-dzuhur' },
+    { key: 'asr', label: 'Ashar', card: 'card-ashar' },
+    { key: 'maghrib', label: 'Maghrib', card: 'card-maghrib' },
+    { key: 'isha', label: "Isya'", card: 'card-isya' }
+  ];
+  var SLIDES = ['tayanganNiat', 'tayanganHp', 'tayanganQuran', 'tayanganAyat'];
+  var VIEWS = ['layout03b', 'menjelangAdzan', 'saatAdzan', 'doaAdzan', 'countdownIqomah',
+    'saatIqomah', 'saatSholat'].concat(SLIDES);
+
+  // Foto bawaan: aset lokal berlisensi di assets/galeri/ (kredit.json).
+  var DEFAULT_GALLERY = [
+    { src: 'assets/galeri/Masjid_Agung_Al-Azhar_Front.jpg', caption: 'Masjid Agung Al-Azhar · Jakarta Selatan', credit: 'Irvan Cahyo N · CC BY-SA 4.0' },
+    { src: 'assets/galeri/Inner_Masjid_Agung.jpg', caption: 'Ruang utama masjid', credit: 'Irvan Cahyo N · CC BY-SA 4.0' },
+    { src: 'assets/galeri/Mosque_Dome_and_Minaret_in_Medan_Sumatra_Indonesia.jpg', caption: 'Masjid Raya Medan · Sumatera Utara', credit: 'Pratyeka · CC BY-SA 3.0' },
+    { src: 'assets/galeri/Yogyakarta_Indonesia_Masjid-Soko-Tunggal-01.jpg', caption: 'Masjid Soko Tunggal · Yogyakarta', credit: 'CEphoto, Uwe Aranas · CC BY-SA 3.0' },
+    { src: 'assets/galeri/Kuta_Bali_Indonesia_Masjid-Agung-Ibnu-Batutah-02.jpg', caption: 'Masjid Agung Ibnu Batutah · Kuta, Bali', credit: 'CEphoto, Uwe Aranas · CC BY-SA 3.0' },
+    { src: 'assets/galeri/Banten_Masjid_Agung_Banten.jpg', caption: 'Masjid Agung Banten · Serang, Banten', credit: 'Kementerian Keuangan RI · Domain publik' }
+  ];
+
+  var DEFAULTS = {
+    mosqueName: 'MASJID HUBBUL WATHON',
+    mosqueAddr: "Jl. Jend. Sudirman No. xx, Mlati Sleman, D.I. Yogyakarta | DKM 08181812xx - Rek. BSI 5461728xx",
+    city: 'Yogyakarta',
+    method: 'kemenag',
+    asr: 'standard',
+    highLat: 'nightMiddle',
+    adzanCountdownSecs: 300,
+    adzanDurationSecs: 180,
+    iqomahMins: 10,
+    sholatMins: 20,
+    dhuhaOffsetMin: 20,
+    slideLeadMins: 15,
+    khatib: 'Ustadz Budi Hidayat, ST, MM',
+    bilal: 'Ustadz Muchlish Saputra',
+    imamPengganti: 'Ustadz Abu Bakar Santosa',
+    eventTitle: "Isra' Mi'raj Nabi Muhammad SAW",
+    eventDate: '',
+    gallery: DEFAULT_GALLERY.map(function (g) { return g.src; }).join('\n'),
+    galleryIntervalSecs: 12,
+    heroImage: '',
+    runningText: 'Jagalah sholat lima waktu, sebab ia adalah tiang agama. • Mari hidupkan sholat berjamaah di masjid. • Kebersihan sebagian dari iman: rawat fasilitas masjid bersama.',
+    tune: {}
+  };
+
+  // Foto bawaan: aset lokal berlisensi di assets/galeri/ (kredit.json).
+  var DEFAULT_GALLERY = [
+    { src: 'assets/galeri/Masjid_Agung_Al-Azhar_Front.jpg', caption: 'Masjid Agung Al-Azhar · Jakarta Selatan', credit: 'Irvan Cahyo N · CC BY-SA 4.0' },
+    { src: 'assets/galeri/Inner_Masjid_Agung.jpg', caption: 'Ruang utama masjid', credit: 'Irvan Cahyo N · CC BY-SA 4.0' },
+    { src: 'assets/galeri/Mosque_Dome_and_Minaret_in_Medan_Sumatra_Indonesia.jpg', caption: 'Masjid Raya Medan · Sumatera Utara', credit: 'Pratyeka · CC BY-SA 3.0' },
+    { src: 'assets/galeri/Yogyakarta_Indonesia_Masjid-Soko-Tunggal-01.jpg', caption: 'Masjid Soko Tunggal · Yogyakarta', credit: 'CEphoto, Uwe Aranas · CC BY-SA 3.0' },
+    { src: 'assets/galeri/Kuta_Bali_Indonesia_Masjid-Agung-Ibnu-Batutah-02.jpg', caption: 'Masjid Agung Ibnu Batutah · Kuta, Bali', credit: 'CEphoto, Uwe Aranas · CC BY-SA 3.0' },
+    { src: 'assets/galeri/Banten_Masjid_Agung_Banten.jpg', caption: 'Masjid Agung Banten · Serang, Banten', credit: 'Kementerian Keuangan RI · Domain publik' }
+  ];
+
+  var state = {
+    settings: null,
+    manualMode: null,
+    demoCycle: false,
+    demoIndex: 0,
+    demoTimer: null,
+    tickTimer: null,
+    lastMode: null,
+    nowOverride: null,
+    scheduleCache: null,
+    audioCtx: null,
+    firedAdhan: {}
+  };
+
+  /* ------------------------------ utilitas ------------------------------ */
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+  function pick(obj, defaults) {
+    var out = clone(defaults);
+    if (!obj || typeof obj !== 'object') return out;
+    for (var k in defaults) {
+      if (Object.prototype.hasOwnProperty.call(obj, k) && obj[k] !== null && obj[k] !== undefined) {
+        out[k] = obj[k];
+      }
+    }
+    return out;
+  }
+
+  function loadSettings() {
+    var raw = null;
+    try { raw = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) { raw = null; }
+    return pick(raw, DEFAULTS);
+  }
+
+  function saveSettings() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state.settings)); } catch (e) { /* penyimpanan penuh */ }
+  }
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function formatHMS(secs) {
+    secs = Math.max(0, Math.round(secs));
+    return pad(Math.floor(secs / 3600)) + ':' + pad(Math.floor(secs / 60) % 60) + ':' + pad(secs % 60);
+  }
+
+  function formatMS(secs) {
+    secs = Math.max(0, Math.round(secs));
+    return pad(Math.floor(secs / 60)) + ':' + pad(secs % 60);
+  }
+
+  function city(name) {
+    var list = PT.CITIES;
+    for (var i = 0; i < list.length; i++) if (list[i].name === name) return list[i];
+    return list[0];
+  }
+
+  function zoneInfo(date) {
+    var c = city(state.settings.city);
+    var off = PT.zoneOffsetAt(c.iana, date);
+    if (off === null || off === undefined) off = c.tz;
+    // Label ramah ("WIB") hanya sah bila zona tidak ber-DST; selain itu pakai
+    // singkatan IANA, lalu jatuh ke offset teks.
+    var label = '';
+    var jan = PT.zoneOffsetAt(c.iana, new Date(Date.UTC(date.getUTCFullYear(), 0, 15)));
+    var jul = PT.zoneOffsetAt(c.iana, new Date(Date.UTC(date.getUTCFullYear(), 6, 15)));
+    var stable = jan !== null && jan === jul;
+    if (c.zone && stable) label = c.zone;
+    if (!label) label = PT.zoneLabelFor(c.iana, date);
+    if (!label) label = PT.formatOffset(off);
+    return { offset: off, label: label, iana: c.iana };
+  }
+
+  /* --------------------------- jadwal waktu sholat --------------------------- */
+
+  function timesFor(civilDate) {
+    var s = state.settings;
+    var c = city(s.city);
+    var z = zoneInfo(civilDate);
+    var hours = PT.calculate({ lat: c.lat, lng: c.lng },
+      { year: civilDate.getFullYear(), month: civilDate.getMonth() + 1, day: civilDate.getDate() },
+      { method: s.method, asr: s.asr, highLat: s.highLat, tzOffset: z.offset, tune: s.tune });
+    var out = {};
+    for (var k in hours) out[k] = PT.toDate(civilDate, hours[k]);
+    out.dhuha = new Date(out.sunrise.getTime() + s.dhuhaOffsetMin * 60000);
+    out.zone = z;
+    return out;
+  }
+
+  function atMidnight(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+
+  /**
+   * Jadwal gabungan untuk pencarian mode: kemarin, hari ini, besok.
+   * Kemarin diperlukan agar alur Isya tetap tampil lewat tengah malam.
+   */
+  function schedules(now) {
+    var key = atMidnight(now).toISOString() + '|' + state.settings.city + '|' +
+      state.settings.method + state.settings.asr + state.settings.highLat + '|' +
+      state.settings.iqomahMins + state.settings.dhuhaOffsetMin + '|' +
+      JSON.stringify(state.settings.tune);
+    if (state.scheduleCache && state.scheduleCache.key === key) return state.scheduleCache;
+
+    var base = atMidnight(now);
+    var list = [];
+    [-1, 0, 1].forEach(function (delta) {
+      var d = new Date(base.getTime() + delta * 86400000);
+      list.push({ date: d, times: timesFor(d) });
+    });
+    state.scheduleCache = { key: key, list: list };
+    return state.scheduleCache;
+  }
+
+  /** Rentang penting untuk satu waktu sholat: adzan, iqomah, selesai sholat. */
+  function windowFor(times, key) {
+    var s = state.settings;
+    var adzan = times[key];
+    var adzanEnd = new Date(adzan.getTime() + s.adzanDurationSecs * 1000);
+    var iqomah = new Date(adzanEnd.getTime() + s.iqomahMins * 60000);
+    var iqomahEnd = new Date(iqomah.getTime() + 90000); // penanda shaf ~90 detik
+    var sholatEnd = new Date(iqomah.getTime() + s.sholatMins * 60000);
+    return {
+      key: key, adzan: adzan, adzanEnd: adzanEnd,
+      iqomah: iqomah, iqomahEnd: iqomahEnd, sholatEnd: sholatEnd
+    };
+  }
+
+  /** Semua rentang pada hari tertentu (plus Isya kemarin untuk dini hari). */
+  function allWindows(now) {
+    var out = [];
+    schedules(now).list.forEach(function (entry) {
+      PRAYERS.forEach(function (p) {
+        out.push(windowFor(entry.times, p.key));
+      });
+    });
+    return out.sort(function (a, b) { return a.adzan - b.adzan; });
+  }
+
+  function prayerLabel(key) {
+    for (var i = 0; i < PRAYERS.length; i++) if (PRAYERS[i].key === key) return PRAYERS[i].label;
+    return key;
+  }
+
+  /** Waktu sholat berikutnya setelah `now`. */
+  function nextPrayer(now) {
+    var ws = allWindows(now);
+    for (var i = 0; i < ws.length; i++) if (ws[i].adzan > now) return ws[i];
+    return ws[ws.length - 1];
+  }
+
+  /** Waktu sholat terakhir yang sudah masuk. */
+  function lastPrayer(now) {
+    var ws = allWindows(now);
+    var last = null;
+    for (var i = 0; i < ws.length; i++) if (ws[i].adzan <= now) last = ws[i];
+    return last;
+  }
+
+  /* ------------------------------ mode otomatis ------------------------------ */
+
+  /**
+   * Tentukan tampilan berdasarkan waktu nyata.
+   * @returns {{mode:string, w:object|null}}
+   */
+  function autoMode(now) {
+    var s = state.settings;
+    var ws = allWindows(now);
+
+    for (var i = 0; i < ws.length; i++) {
+      var w = ws[i];
+      var countdownStart = new Date(w.adzan.getTime() - s.adzanCountdownSecs * 1000);
+      if (now >= countdownStart && now < w.adzan) return { mode: 'menjelangAdzan', w: w };
+      if (now >= w.adzan && now < w.adzanEnd) return { mode: 'saatAdzan', w: w };
+      // Setelah adzan: paruh pertama menampilkan doa, paruh kedua penyiapan shaf.
+      var midGap = new Date(w.adzanEnd.getTime() + (w.iqomah - w.adzanEnd) / 2);
+      if (now >= w.adzanEnd && now < midGap) return { mode: 'doaAdzan', w: w };
+      if (now >= midGap && now < w.iqomah) return { mode: 'countdownIqomah', w: w };
+      if (now >= w.iqomah && now < w.iqomahEnd) return { mode: 'saatIqomah', w: w };
+      if (now >= w.iqomahEnd && now < w.sholatEnd) return { mode: 'saatSholat', w: w };
+    }
+
+    // Jendela slide sebelum hitung mundur adzan.
+    var nx = nextPrayer(now);
+    if (nx && s.slideLeadMins > 0) {
+      var slideStart = new Date(nx.adzan.getTime() -
+        (s.slideLeadMins * 60000 + s.adzanCountdownSecs * 1000));
+      var slideEnd = new Date(nx.adzan.getTime() - s.adzanCountdownSecs * 1000);
+      if (now >= slideStart && now < slideEnd) {
+        var span = slideEnd - slideStart;
+        var idx = Math.floor((now - slideStart) / Math.max(1000, span / SLIDES.length)) % SLIDES.length;
+        return { mode: SLIDES[idx], w: nx };
+      }
+    }
+
+    return { mode: 'layout03b', w: nx };
+  }
+
+  /* -------------------------------- tampilan -------------------------------- */
+
+  function showView(mode) {
+    VIEWS.forEach(function (v) {
+      var el = document.getElementById('view-' + v);
+      if (!el) return;
+      if (v === mode) { el.classList.remove('hidden'); el.classList.add('flex'); }
+      else { el.classList.add('hidden'); el.classList.remove('flex'); }
+    });
+
+    document.querySelectorAll('.mode-btn').forEach(function (b) {
+      b.classList.remove('bg-gold-500', 'text-slate-950', 'font-bold');
+      b.classList.add('bg-slate-800', 'text-slate-300');
+    });
+    var btn = document.getElementById('btn-' + mode);
+    if (btn) {
+      btn.classList.remove('bg-slate-800', 'text-slate-300');
+      btn.classList.add('bg-gold-500', 'text-slate-950', 'font-bold');
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function switchMode(mode) {
+    state.manualMode = mode;
+    state.lastMode = mode;
+    showView(mode);
+  }
+
+  function setAutoFollow() {
+    state.manualMode = null;
+    stopDemoCycle();
+    if (state.nowOverride) state.nowOverride = null;
+    render(new Date());
+  }
+
+  function toggleDemoCycle() {
+    state.demoCycle = !state.demoCycle;
+    var btn = document.getElementById('btn-demoCycle');
+    if (state.demoCycle) {
+      state.manualMode = null;
+      if (btn) { btn.classList.add('bg-gold-500', 'text-slate-950', 'font-bold'); btn.innerText = 'Demo (ON)'; }
+      state.demoTimer = setInterval(function () {
+        state.demoIndex = (state.demoIndex + 1) % VIEWS.length;
+        state.manualMode = VIEWS[state.demoIndex];
+        showView(state.manualMode);
+      }, 6000);
+    } else {
+      stopDemoCycle();
+      if (btn) { btn.classList.remove('bg-gold-500', 'text-slate-950', 'font-bold'); btn.innerText = 'Demo Keliling'; }
+    }
+  }
+
+  function stopDemoCycle() {
+    state.demoCycle = false;
+    if (state.demoTimer) clearInterval(state.demoTimer);
+    state.demoTimer = null;
+    var btn = document.getElementById('btn-demoCycle');
+    if (btn) { btn.classList.remove('bg-gold-500', 'text-slate-950', 'font-bold'); btn.innerText = 'Demo Keliling'; }
+  }
+
+  function setText(sel, value) {
+    document.querySelectorAll(sel).forEach(function (el) { el.textContent = value; });
+  }
+
+  // Foto latar bergantian otomatis dengan efek silang.
+  function galleryList() {
+    var s = state.settings;
+    var list = [];
+    if (s.heroImage) list.push({ src: s.heroImage, credit: '' });
+    String(s.gallery || '').split('\n').forEach(function (line) {
+      var src = line.trim();
+      if (!src) return;
+      var meta = DEFAULT_GALLERY.filter(function (g) { return g.src === src; })[0];
+      list.push({ src: src, credit: meta ? meta.credit : '' });
+    });
+    return list;
+  }
+
+  function startGallery() {
+    stopGallery();
+    var list = galleryList();
+    if (!list.length) return;
+
+    // Dua lapisan untuk efek silang: panel pahlawan dan latar penuh layar.
+    var layers = [
+      { front: document.getElementById('heroBgImg'), back: document.getElementById('heroBgImgAlt'),
+        opacity: '0.45', frontIsA: true },
+      { front: document.getElementById('heroBgFull'), back: document.getElementById('heroBgFullAlt'),
+        opacity: '0.30', frontIsA: true }
+    ];
+    var idx = 0;
+
+    layers.forEach(function (l) {
+      l.front.style.backgroundImage = "url('" + list[0].src + "')";
+      l.front.style.opacity = l.opacity;
+      l.back.style.opacity = '0';
+    });
+    setText('#dispHeroCredit', list[0].credit || '');
+
+    function paint(item) {
+      layers.forEach(function (l) {
+        var incoming = l.frontIsA ? l.back : l.front;
+        var outgoing = l.frontIsA ? l.front : l.back;
+        incoming.style.backgroundImage = "url('" + item.src + "')";
+        incoming.style.opacity = l.opacity;
+        outgoing.style.opacity = '0';
+        l.frontIsA = !l.frontIsA;
+      });
+      setText('#dispHeroCredit', item.credit || '');
+    }
+
+    if (list.length < 2) return;
+    state.galleryTimer = setInterval(function () {
+      idx = (idx + 1) % list.length;
+      paint(list[idx]);
+    }, Math.max(4, state.settings.galleryIntervalSecs) * 1000);
+  }
+
+  function stopGallery() {
+    if (state.galleryTimer) clearInterval(state.galleryTimer);
+    state.galleryTimer = null;
+  }
+
+  // Bagian header yang hanya berubah saat setelan disimpan.
+  function renderStatic() {
+    var s = state.settings;
+    setText('#dispMosqueName', s.mosqueName);
+    setText('#dispMosqueAddr', s.mosqueAddr);
+    setText('#dispRunningText', s.runningText);
+    setText('#dispKhatib', s.khatib);
+    setText('#dispBilal', s.bilal);
+    setText('#dispImamPengganti', s.imamPengganti);
+    setText('#dispEventTitle', s.eventTitle);
+    startGallery();
+    state.staticRendered = true;
+  }
+
+  // Bagian header yang bergantung tanggal: agenda dan petugas Jum'at.
+  function renderDayInfo(now) {
+    var s = state.settings;
+    var today = atMidnight(now);
+
+    var days = 0;
+    if (s.eventDate) {
+      var ev = new Date(s.eventDate + 'T00:00:00');
+      if (!isNaN(ev)) days = Math.max(0, Math.ceil((ev - today) / 86400000));
+    }
+    setText('#dispEventDays', String(days));
+
+    // Petugas Jum'at: Jum'at terdekat, termasuk hari ini bila sedang Jum'at.
+    var toFri = (5 - now.getDay() + 7) % 7;
+    var fri = new Date(today.getTime() + toFri * 86400000);
+    setText('#dispOfficerDate', pad(fri.getDate()) + '/' + pad(fri.getMonth() + 1) + '/' + fri.getFullYear());
+  }
+
+  function renderDate(now, tz) {
+    var h = PT.gregorianToHijri(now.getFullYear(), now.getMonth() + 1, now.getDate());
+    var monthName = PT.HIJRI_MONTHS[h.month - 1] || '';
+    setText('#dispDateDayName', PT.DAY_NAMES[now.getDay()].toUpperCase());
+    setText('#dispDateMasehi', now.getDate() + ' ' + PT.GREGORIAN_MONTHS[now.getMonth()] + ' ' + now.getFullYear() + ' M');
+    setText('#dispDateHijri', h.day + ' ' + monthName + ' ' + h.year + ' H');
+    setText('#dispPasaran', 'Pasaran: ' + PT.pasaranFor(now.getFullYear(), now.getMonth() + 1, now.getDate()));
+    document.getElementById('dispDateHijri').setAttribute('data-zone', tz.label);
+  }
+
+  function renderClocks(now, tz) {
+    var hh = pad(now.getHours()), mm = pad(now.getMinutes()), ss = pad(now.getSeconds());
+
+    var digital = document.getElementById('dispDigitalClockText');
+    if (digital) digital.innerHTML = hh + ':' + mm + ':' + ss + ' <span class="text-xs text-slate-400">' + tz.label + '</span>';
+
+    setText('[data-strip-clock]', hh + ':' + mm + ':' + ss);
+
+    var secDeg = (now.getSeconds() / 60) * 360;
+    var minDeg = ((now.getMinutes() + now.getSeconds() / 60) / 60) * 360;
+    var hourDeg = (((now.getHours() % 12) + now.getMinutes() / 60) / 12) * 360;
+    ['analogSecHand', 'sholatAnalogSec', 'doaAnalogSec', 'iqomahAnalogSec'].forEach(function (id) {
+      rotate(id, secDeg);
+    });
+    ['analogMinHand', 'sholatAnalogMin', 'doaAnalogMin', 'iqomahAnalogMin'].forEach(function (id) {
+      rotate(id, minDeg);
+    });
+    ['analogHourHand', 'sholatAnalogHour', 'doaAnalogHour', 'iqomahAnalogHour'].forEach(function (id) {
+      rotate(id, hourDeg);
+    });
+  }
+
+  function rotate(id, deg) {
+    var el = document.getElementById(id);
+    if (el) el.style.transform = 'translateX(-50%) rotate(' + deg + 'deg)';
+  }
+
+  function renderTimes(now) {
+    var s = state.settings;
+    var today = timesFor(atMidnight(now));
+    var z = today.zone;
+
+    PRAYERS.forEach(function (p) {
+      setText('[data-time="' + p.key + '"]', PT.formatTime(
+        today[p.key].getHours() + today[p.key].getMinutes() / 60 + today[p.key].getSeconds() / 3600));
+    });
+    setText('[data-time="dhuha"]', PT.formatTime(
+      today.dhuha.getHours() + today.dhuha.getMinutes() / 60 + today.dhuha.getSeconds() / 3600));
+
+    // Sorot kartu waktu yang sedang berjalan / berikutnya.
+    PRAYERS.forEach(function (p) { document.getElementById(p.card).classList.remove('glass-card-active'); });
+    var nx = nextPrayer(now);
+    if (nx) {
+      for (var i = 0; i < PRAYERS.length; i++) {
+        if (PRAYERS[i].key === nx.key) document.getElementById(PRAYERS[i].card).classList.add('glass-card-active');
+      }
+    }
+
+    var target = nx ? nx.adzan : null;
+    var targetTime = target ? PT.formatTime(target.getHours() + target.getMinutes() / 60 + target.getSeconds() / 3600) : '--:--';
+    setText('#dispNextLabel', nx ? ('MENUJU ' + prayerLabel(nx.key).toUpperCase()) : 'SHOLAT BERIKUTNYA');
+    var left = target ? (target - now) / 1000 : 0;
+    setText('#dispNextPrayerTarget', (nx ? prayerLabel(nx.key) + ' - ' : '') + formatHMS(left));
+    setText('[data-time="nextPrayer"]', targetTime);
+    setText('.prayer-next', nx ? prayerLabel(nx.key) : '—');
+    return { next: nx, targetTime: targetTime };
+  }
+
+  function renderMode(now, mode, w) {
+    var s = state.settings;
+
+    // Label nama sholat untuk jendela yang sedang berjalan.
+    var nowLabel = w ? prayerLabel(w.key) : '—';
+    setText('.prayer-now', nowLabel);
+
+    if (mode === 'menjelangAdzan') {
+      var left = Math.max(0, (w.adzan - now) / 1000);
+      setText('#adzanSecsCount', pad(Math.ceil(left)));
+      var ring = document.getElementById('adzanProgressRing');
+      if (ring) {
+        var frac = Math.min(1, left / s.adzanCountdownSecs);
+        ring.style.strokeDashoffset = String(263.89 * (1 - frac));
+      }
+    }
+
+    if (mode === 'saatAdzan') {
+      var elapsed = (now - w.adzan) / 1000;
+      var pct = Math.max(0, Math.min(100, (elapsed / s.adzanDurationSecs) * 100));
+      var bar = document.getElementById('adzanBarFill');
+      if (bar) bar.style.width = pct + '%';
+      setText('#adzanIqomahTimerSub', formatMS((w.iqomah - now) / 1000));
+    }
+
+    if (mode === 'doaAdzan' || mode === 'countdownIqomah') {
+      var remain = formatMS((w.iqomah - now) / 1000);
+      setText('#doaBigTimer', remain);
+      setText('#iqomahBigTimer', remain);
+      setText('[data-time="iqomahAt"]', PT.formatTime(
+        w.iqomah.getHours() + w.iqomah.getMinutes() / 60 + w.iqomah.getSeconds() / 3600));
+      setText('#iqomahNotice', 'Persiapan Sholat ' + prayerLabel(w.key) +
+        ' — segera matikan atau silent gadget anda');
+    }
+  }
+
+  function render(now) {
+    var tz = zoneInfo(now);
+    if (!state.staticRendered) renderStatic();
+    renderDayInfo(now);
+    renderDate(now, tz);
+    renderClocks(now, tz);
+    renderTimes(now);
+
+    var auto = autoMode(now);
+    var mode = state.manualMode || auto.mode;
+    var w = auto.w;
+    if (state.manualMode && !w) w = nextPrayer(now);
+
+    renderMode(now, mode, w);
+
+    if (mode !== state.lastMode) {
+      state.lastMode = mode;
+      showView(mode);
+      if (mode === 'saatAdzan') playChime();
+    }
+    return { mode: mode, w: w };
+  }
+
+  /* -------------------------------- suara -------------------------------- */
+
+  // AudioContext dibuat sekali; membuat baru tiap adzan akan menumpuk dan
+  // akhirnya ditolak browser pada display yang menyala lama.
+  function audio() {
+    if (!state.audioCtx) {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      state.audioCtx = new Ctx();
+    }
+    if (state.audioCtx.state === 'suspended') state.audioCtx.resume();
+    return state.audioCtx;
+  }
+
+  function playChime() {
+    var ctx = audio();
+    if (!ctx) return;
+    try {
+      var now = ctx.currentTime;
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, now);
+      osc.frequency.setValueAtTime(659.25, now + 0.3);
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(now); osc.stop(now + 1.5);
+    } catch (e) { /* audio diblokir kebijakan autoplay */ }
+  }
+
+  /* ------------------------------ pengaturan ------------------------------ */
+
+  function populateForm() {
+    var s = state.settings;
+    document.getElementById('cfgCity').innerHTML = PT.CITIES.map(function (c) {
+      return '<option value="' + c.name + '">' + c.name + ' · ' + c.zone + '</option>';
+    }).join('');
+    document.getElementById('cfgMethod').innerHTML = Object.keys(PT.METHODS).map(function (k) {
+      var m = PT.METHODS[k];
+      return '<option value="' + k + '">' + m.label + ' — ' + m.region + '</option>';
+    }).join('');
+  }
+
+  function fillForm() {
+    var s = state.settings;
+    document.getElementById('cfgMosqueName').value = s.mosqueName;
+    document.getElementById('cfgMosqueAddr').value = s.mosqueAddr;
+    document.getElementById('cfgCity').value = s.city;
+    document.getElementById('cfgMethod').value = s.method;
+    document.getElementById('cfgAsr').value = s.asr;
+    document.getElementById('cfgAdzanCountdown').value = s.adzanCountdownSecs;
+    document.getElementById('cfgAdzanDuration').value = s.adzanDurationSecs;
+    document.getElementById('cfgIqomahMins').value = s.iqomahMins;
+    document.getElementById('cfgSholatMins').value = s.sholatMins;
+    document.getElementById('cfgDhuhaOffset').value = s.dhuhaOffsetMin;
+    document.getElementById('cfgSlideLead').value = s.slideLeadMins;
+    document.getElementById('cfgKhatib').value = s.khatib;
+    document.getElementById('cfgBilal').value = s.bilal;
+    document.getElementById('cfgImam').value = s.imamPengganti;
+    document.getElementById('cfgEventTitle').value = s.eventTitle;
+    document.getElementById('cfgEventDate').value = s.eventDate || '';
+    document.getElementById('cfgGallery').value = s.gallery || '';
+    document.getElementById('cfgGalleryInterval').value = s.galleryIntervalSecs;
+    document.getElementById('cfgHeroImage').value = s.heroImage;
+    document.getElementById('cfgRunningText').value = s.runningText;
+  }
+
+  function openSettingsModal() {
+    fillForm();
+    document.getElementById('settingsModal').classList.remove('hidden');
+  }
+
+  function closeSettingsModal() {
+    document.getElementById('settingsModal').classList.add('hidden');
+  }
+
+  function readForm() {
+    var s = state.settings;
+    function val(id) { return document.getElementById(id).value.trim(); }
+    function num(id, fallback) {
+      var n = parseFloat(document.getElementById(id).value);
+      return isNaN(n) ? fallback : n;
+    }
+    s.mosqueName = val('cfgMosqueName') || DEFAULTS.mosqueName;
+    s.mosqueAddr = val('cfgMosqueAddr');
+    s.city = document.getElementById('cfgCity').value;
+    s.method = document.getElementById('cfgMethod').value;
+    s.asr = document.getElementById('cfgAsr').value;
+    s.adzanCountdownSecs = num('cfgAdzanCountdown', DEFAULTS.adzanCountdownSecs);
+    s.adzanDurationSecs = num('cfgAdzanDuration', DEFAULTS.adzanDurationSecs);
+    s.iqomahMins = num('cfgIqomahMins', DEFAULTS.iqomahMins);
+    s.sholatMins = num('cfgSholatMins', DEFAULTS.sholatMins);
+    s.dhuhaOffsetMin = num('cfgDhuhaOffset', DEFAULTS.dhuhaOffsetMin);
+    s.slideLeadMins = num('cfgSlideLead', DEFAULTS.slideLeadMins);
+    s.khatib = val('cfgKhatib');
+    s.bilal = val('cfgBilal');
+    s.imamPengganti = val('cfgImam');
+    s.eventTitle = val('cfgEventTitle');
+    s.eventDate = val('cfgEventDate');
+    s.gallery = document.getElementById('cfgGallery').value;
+    s.galleryIntervalSecs = num('cfgGalleryInterval', DEFAULTS.galleryIntervalSecs);
+    s.heroImage = val('cfgHeroImage');
+    s.runningText = val('cfgRunningText');
+    return s;
+  }
+
+  function saveSettingsModal() {
+    state.settings = readForm();
+    saveSettings();
+    state.scheduleCache = null;
+    state.staticRendered = false;
+    closeSettingsModal();
+    render(now());
+  }
+
+  function resetSettings() {
+    stopGallery();
+    try { localStorage.removeItem(STORE_KEY); } catch (e) { /* abaikan */ }
+    state.settings = clone(DEFAULTS);
+    state.scheduleCache = null;
+    state.staticRendered = false;
+    saveSettings();
+    fillForm();
+    render(now());
+  }
+
+  /* ------------------------------ simulator ------------------------------ */
+
+  function applySimVisibility() {
+    var on = /(\?|&)sim=1/.test(location.search);
+    if (on) document.body.classList.add('sim-on');
+  }
+
+  function initSimToggle() {
+    document.addEventListener('keydown', function (e) {
+      if (e.ctrlKey && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+        e.preventDefault();
+        document.body.classList.toggle('sim-on');
+      } else if (!e.ctrlKey && !e.metaKey && (e.key === 's' || e.key === 'S')) {
+        var tag = (e.target && e.target.tagName) || '';
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+        openSettingsModal();
+      } else if (e.key === 'Escape') {
+        closeSettingsModal();
+      }
+    });
+  }
+
+  function initCursorAutoHide() {
+    var body = document.getElementById('appBody');
+    var t = null;
+    function reset() {
+      body.classList.remove('idle-cursor-hidden');
+      clearTimeout(t);
+      t = setTimeout(function () { body.classList.add('idle-cursor-hidden'); }, 5000);
+    }
+    window.addEventListener('mousemove', reset);
+    window.addEventListener('touchstart', reset);
+    reset();
+  }
+
+  /* --------------------------------- tick --------------------------------- */
+
+  function now() {
+    return state.nowOverride ? new Date(state.nowOverride) : new Date();
+  }
+
+  function tick() {
+    if (!state.nowOverride) render(new Date());
+  }
+
+  function boot() {
+    state.settings = loadSettings();
+    populateForm();
+    applySimVisibility();
+    initSimToggle();
+    initCursorAutoHide();
+    render(new Date());
+    setInterval(tick, 1000);
+
+    // Recompute jadwal tiap pergantian hari tanpa perlu muat ulang.
+    setInterval(function () { state.scheduleCache = null; }, 3600000);
+  }
+
+  document.addEventListener('DOMContentLoaded', boot);
+
+  /* ------------------------------- API uji ------------------------------- */
+  window.DisplayTV = {
+    state: state,
+    settings: function () { return clone(state.settings); },
+    apply: function (patch) {
+      state.settings = pick(Object.assign({}, state.settings, patch), DEFAULTS);
+      saveSettings();
+      state.scheduleCache = null;
+      state.staticRendered = false;
+      render(now());
+    },
+    resetSettings: resetSettings,
+    resetStore: function () { try { localStorage.removeItem(STORE_KEY); } catch (e) {} },
+    times: function (d) { return timesFor(d || now()); },
+    schedule: function (d) { return timesFor(d || now()); },
+    autoMode: function (d) { return autoMode(d || now()); },
+    nextPrayer: function (d) { return nextPrayer(d || now()); },
+    lastPrayer: function (d) { return lastPrayer(d || now()); },
+    allWindows: function (d) { return allWindows(d || now()); },
+    setMode: switchMode,
+    setAuto: setAutoFollow,
+    setNow: function (iso) { state.nowOverride = iso; render(now()); },
+    clearNow: function () { state.nowOverride = null; render(now()); },
+    render: function () { return render(now()); },
+    views: VIEWS,
+    playChime: playChime
+  };
+})();
+</script>
+</body>
+</html>

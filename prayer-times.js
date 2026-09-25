@@ -336,6 +336,129 @@
     return isNaN(elev) ? null : elev;
   }
 
+  /**
+   * Daftar kota rujukan: [nama, lintang, bujur, offset rujukan, label zona, zona IANA].
+   * Offset hanya rujukan; zona IANA yang menentukan DST.
+   */
+  var CITIES_RAW = [
+    ['Jakarta', -6.2088, 106.8456, 7, 'WIB', 'Asia/Jakarta'],
+    ['Bogor', -6.5950, 106.8166, 7, 'WIB', 'Asia/Jakarta'],
+    ['Bandung', -6.9175, 107.6191, 7, 'WIB', 'Asia/Jakarta'],
+    ['Semarang', -6.9667, 110.4167, 7, 'WIB', 'Asia/Jakarta'],
+    ['Yogyakarta', -7.7956, 110.3695, 7, 'WIB', 'Asia/Jakarta'],
+    ['Surabaya', -7.2575, 112.7521, 7, 'WIB', 'Asia/Jakarta'],
+    ['Medan', 3.5952, 98.6722, 7, 'WIB', 'Asia/Jakarta'],
+    ['Palembang', -2.9761, 104.7754, 7, 'WIB', 'Asia/Jakarta'],
+    ['Banda Aceh', 5.5483, 95.3238, 7, 'WIB', 'Asia/Jakarta'],
+    ['Denpasar', -8.6500, 115.2167, 8, 'WITA', 'Asia/Makassar'],
+    ['Mataram', -8.5833, 116.1167, 8, 'WITA', 'Asia/Makassar'],
+    ['Makassar', -5.1477, 119.4327, 8, 'WITA', 'Asia/Makassar'],
+    ['Balikpapan', -1.2379, 116.8529, 8, 'WITA', 'Asia/Makassar'],
+    ['Manado', 1.4748, 124.8421, 8, 'WITA', 'Asia/Makassar'],
+    ['Ambon', -3.6954, 128.1814, 9, 'WIT', 'Asia/Jayapura'],
+    ['Jayapura', -2.5916, 140.6690, 9, 'WIT', 'Asia/Jayapura'],
+    ['Makkah', 21.4225, 39.8262, 3, 'AST', 'Asia/Riyadh'],
+    ['Madinah', 24.4686, 39.6142, 3, 'AST', 'Asia/Riyadh'],
+    ['Kuala Lumpur', 3.1390, 101.6869, 8, 'MYT', 'Asia/Kuala_Lumpur'],
+    ['Singapura', 1.3521, 103.8198, 8, 'SGT', 'Asia/Singapore'],
+    ['Bandar Seri Begawan', 4.9031, 114.9398, 8, 'BNT', 'Asia/Brunei'],
+    ['Kairo', 30.0444, 31.2357, 2, 'EET', 'Africa/Cairo'],
+    ['Istanbul', 41.0082, 28.9784, 3, 'TRT', 'Europe/Istanbul'],
+    ['London', 51.5074, -0.1278, 0, 'GMT', 'Europe/London'],
+    ['Paris', 48.8566, 2.3522, 1, 'CET', 'Europe/Paris'],
+    ['Amsterdam', 52.3676, 4.9041, 1, 'CET', 'Europe/Amsterdam'],
+    ['New York', 40.7128, -74.0060, -5, 'EST', 'America/New_York'],
+    ['Chicago', 41.8781, -87.6298, -6, 'CST', 'America/Chicago'],
+    ['Los Angeles', 34.0522, -118.2437, -8, 'PST', 'America/Los_Angeles'],
+    ['Sydney', -33.8688, 151.2093, 10, 'AEST', 'Australia/Sydney'],
+    ['Melbourne', -37.8136, 144.9631, 10, 'AEST', 'Australia/Melbourne'],
+    ['Tokyo', 35.6762, 139.6503, 9, 'JST', 'Asia/Tokyo'],
+    ['Seoul', 37.5665, 126.9780, 9, 'KST', 'Asia/Seoul'],
+    ['Delhi', 28.6139, 77.2090, 5.5, 'IST', 'Asia/Kolkata'],
+    ['Karachi', 24.8607, 67.0011, 5, 'PKT', 'Asia/Karachi'],
+    ['Dubai', 25.2048, 55.2708, 4, 'GST', 'Asia/Dubai'],
+    ['Toronto', 43.6532, -79.3832, -5, 'EST', 'America/Toronto']
+  ];
+
+  var CITIES = CITIES_RAW.map(function (c) {
+    return { name: c[0], lat: c[1], lng: c[2], tz: c[3], zone: c[4], iana: c[5] };
+  });
+
+  /* ------------------------------ pasaran Jawa ------------------------------- */
+  // Siklus pasaran berulang tiap 5 hari. Acuan 17 Agustus 1945 = Jumat Legi.
+  var PASARAN = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
+  var PASARAN_ANCHOR = Date.UTC(1945, 7, 17);
+
+  /**
+   * Indeks pasaran (0=Legi .. 4=Kliwon) untuk tanggal Masehi tertentu.
+   * @param {number} gy tahun, gm bulan 1-12, gd tanggal
+   * @returns {number}
+   */
+  function pasaranIndex(gy, gm, gd) {
+    var days = Math.round((Date.UTC(gy, gm - 1, gd) - PASARAN_ANCHOR) / 86400000);
+    return ((days % 5) + 5) % 5;
+  }
+
+  /**
+   * Nama pasaran Jawa untuk tanggal tertentu.
+   * @returns {string} mis. "Pahing"
+   */
+  function pasaranFor(gy, gm, gd) {
+    return PASARAN[pasaranIndex(gy, gm, gd)];
+  }
+
+  /* -------------------------------- zona waktu ------------------------------- */
+  var DEVICE_ZONE = '';
+  try { DEVICE_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { DEVICE_ZONE = ''; }
+  var ZONE_SUPPORTED = (function () {
+    try { new Intl.DateTimeFormat('en-US', { timeZone: 'UTC' }); return true; }
+    catch (e) { return false; }
+  })();
+
+  /**
+   * Offset UTC (jam) zona IANA pada saat tertentu — memperhitungkan DST.
+   * @returns {number|null} null bila zona tidak dikenal
+   */
+  function zoneOffsetAt(iana, date) {
+    if (!ZONE_SUPPORTED || !iana) return null;
+    try {
+      var dtf = new Intl.DateTimeFormat('en-US', {
+        timeZone: iana, hour12: false,
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+      var map = {};
+      dtf.formatToParts(date).forEach(function (p) { map[p.type] = p.value; });
+      var hour = parseInt(map.hour, 10) % 24;
+      var asUTC = Date.UTC(parseInt(map.year, 10), parseInt(map.month, 10) - 1, parseInt(map.day, 10),
+        hour, parseInt(map.minute, 10), parseInt(map.second, 10));
+      return (asUTC - Math.floor(date.getTime() / 1000) * 1000) / 3600000;
+    } catch (e) { return null; }
+  }
+
+  /**
+   * Singkatan zona IANA (mis. "WIB", "GMT+1", "BST") pada saat tertentu.
+   * @returns {string} kosong bila tidak tersedia
+   */
+  function zoneLabelFor(iana, date) {
+    if (!ZONE_SUPPORTED || !iana) return '';
+    try {
+      var parts = new Intl.DateTimeFormat('en-US', { timeZone: iana, timeZoneName: 'short' })
+        .formatToParts(date);
+      var tz = parts.filter(function (p) { return p.type === 'timeZoneName'; })[0];
+      return tz ? tz.value : '';
+    } catch (e) { return ''; }
+  }
+
+  /** Offset jam desimal menjadi teks, mis. 5.5 -> "UTC+5:30". */
+  function formatOffset(h) {
+    var sign = h < 0 ? '-' : '+';
+    var abs = Math.abs(h);
+    var hh = Math.floor(abs);
+    var mm = Math.round((abs - hh) * 60);
+    return 'UTC' + sign + hh + (mm ? ':' + String(mm).padStart(2, '0') : '');
+  }
+
   function formatTime(hours, separator) {
     if (typeof hours !== 'number' || isNaN(hours)) return '--:--';
     var total = Math.round(fixHour(hours) * 60);
@@ -345,12 +468,17 @@
 
   global.PrayerTimes = {
     METHODS: METHODS, HIGH_LAT: HIGH_LAT, NAMES: NAMES, SHOLAT_NAMES: SHOLAT_NAMES,
+    CITIES: CITIES,
     HIJRI_MONTHS: HIJRI_MONTHS, HIJRI_MONTHS_AR: HIJRI_MONTHS_AR,
     GREGORIAN_MONTHS: GREGORIAN_MONTHS, DAY_NAMES: DAY_NAMES, DAY_NAMES_AR: DAY_NAMES_AR,
+    PASARAN: PASARAN,
     RISE_SET_ANGLE: RISE_SET_ANGLE,
     calculate: calculate, toDate: toDate, formatTime: formatTime,
     sunElevation: sunElevation,
     gregorianToHijri: gregorianToHijri, julianDate: julianDate,
+    pasaranIndex: pasaranIndex, pasaranFor: pasaranFor,
+    DEVICE_ZONE: DEVICE_ZONE, ZONE_SUPPORTED: ZONE_SUPPORTED,
+    zoneOffsetAt: zoneOffsetAt, zoneLabelFor: zoneLabelFor, formatOffset: formatOffset,
     fixHour: fixHour, buildConfig: buildConfig
   };
 

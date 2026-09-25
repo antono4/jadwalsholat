@@ -85,3 +85,40 @@ Protocol dan mengharapkan server di `http://localhost:8000`.
 
 Hasil sudah dicocokkan dengan `api.aladhan.com` (mis. `?method=20` untuk Kemenag) dan cocok persis
 untuk Subuh/Ashar/Maghrib/Isya. Dzuhur berbeda ~2 menit karena ihtiyati Kemenag — itu disengaja.
+
+## Display TV (`display.html`)
+
+- Berbagi mesin yang sama dengan dashboard: `prayer-times.js` dimuat lebih dulu, lalu skrip
+  bawaan halaman. **Jangan** menduplikasi daftar kota, pasaran, atau utilitas zona waktu di sini;
+  semuanya sudah diekspor dari `PrayerTimes` (`CITIES`, `pasaranFor`, `zoneOffsetAt`,
+  `zoneLabelFor`, `formatOffset`). `app.js` pun memakai sumber yang sama, jadi mengubah daftar
+  kota cukup di satu tempat.
+- Pasaran Jawa memakai acuan 17 Agustus 1945 = Jumat Legi, siklus 5 hari. Sudah dicocokkan
+  dengan kalender terbitan (mis. 22 Oktober 2025 = Pahing).
+- Label zona ramah ("WIB"/"WITA") hanya dipakai bila zona tidak ber-DST. Untuk kota ber-DST
+  (London, New York) label jatuh ke singkatan IANA atau `UTC+n` supaya tidak salah saat musim
+  panas. Sebagian peramban tanpa data ICU mengembalikan "GMT+n" untuk semua zona — karena itu
+  jalur label ramah tetap dipertahankan.
+- Jadwal dihitung untuk kemarin, hari ini, dan besok sekaligus, agar alur Isya tetap benar pada
+  dini hari. Jangan mengubah ini menjadi hanya "hari ini", atau rentang yang melewati tengah
+  malam akan salah.
+- Fungsi `render(now)` harus memakai parameter `now`, bukan `new Date()` langsung. Header dipisah
+  menjadi `renderStatic()` (hanya saat setelan berubah, ditandai `state.staticRendered`) dan
+  `renderDayInfo(now)` (agenda dan petugas Jum'at). Interval 1 detik memanggil `tick()`, yang
+  menghormati `state.nowOverride` — dipakai oleh `window.DisplayTV.setNow()` saat menguji.
+- `window.DisplayTV` adalah antarmuka uji: `setNow`/`clearNow`, `apply`, `setMode`, `autoMode`,
+  `times`, `resetSettings`. Uji mode otomatis sebaiknya menyuntikkan waktu, bukan menunggu.
+- `AudioContext` dibuat sekali dan dipakai ulang. Jangan membuat `AudioContext` baru tiap kali
+  adzan berbunyi: pada papan yang menyala berhari-hari, konteks akan menumpuk sampai peramban
+  menolak membuat yang baru dan bunyi berhenti.
+- Simulator mode disembunyikan lewat `body:not(.sim-on) #remoteBar`. Kelas `sim-on` diberikan
+  oleh `?sim=1` atau `Ctrl+Shift+D`. Ini supaya papan yang dipakai jamaah tidak menampilkan
+  tombol uji.
+- Kelas Tailwind yang tidak ada di skala bawaan akan menghasilkan nilai nol dan diam-diam rusak:
+  `h-15`, `backdrop-blur-xs` (dan seterusnya) bukan nama yang sah. Pakai `h-16`/`h-[3.75rem]`
+  dan `backdrop-blur-sm`. Uji terhitung di peramban pernah menangkap `h-15` setinggi 0 px.
+- Bilah mode memakai `hidden` + `flex`; kelas `screen-view` disertai `flex` ditambah/dihapus
+  (`hidden`) oleh `showView()`. Pola ini aman, tetapi jangan menambah `flex` di markup layar
+  yang harus tersembunyi.
+- Uji terkait ada di luar repo (`/tmp/display_test.py`, `/tmp/display_robust_test.py`) dan
+  memakai `cdp.py` dengan server di `http://localhost:8000`.

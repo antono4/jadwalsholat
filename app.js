@@ -10,48 +10,8 @@
   var KAABA = { lat: 21.4225, lng: 39.8262 };
 
   /* ------------------------------- daftar kota ------------------------------- */
-  // [nama, lintang, bujur, offset rujukan, label zona, zona IANA]
-  var CITIES = [
-    ['Jakarta', -6.2088, 106.8456, 7, 'WIB', 'Asia/Jakarta'],
-    ['Bogor', -6.5950, 106.8166, 7, 'WIB', 'Asia/Jakarta'],
-    ['Bandung', -6.9175, 107.6191, 7, 'WIB', 'Asia/Jakarta'],
-    ['Semarang', -6.9667, 110.4167, 7, 'WIB', 'Asia/Jakarta'],
-    ['Yogyakarta', -7.7956, 110.3695, 7, 'WIB', 'Asia/Jakarta'],
-    ['Surabaya', -7.2575, 112.7521, 7, 'WIB', 'Asia/Jakarta'],
-    ['Medan', 3.5952, 98.6722, 7, 'WIB', 'Asia/Jakarta'],
-    ['Palembang', -2.9761, 104.7754, 7, 'WIB', 'Asia/Jakarta'],
-    ['Banda Aceh', 5.5483, 95.3238, 7, 'WIB', 'Asia/Jakarta'],
-    ['Denpasar', -8.6500, 115.2167, 8, 'WITA', 'Asia/Makassar'],
-    ['Mataram', -8.5833, 116.1167, 8, 'WITA', 'Asia/Makassar'],
-    ['Makassar', -5.1477, 119.4327, 8, 'WITA', 'Asia/Makassar'],
-    ['Balikpapan', -1.2379, 116.8529, 8, 'WITA', 'Asia/Makassar'],
-    ['Manado', 1.4748, 124.8421, 8, 'WITA', 'Asia/Makassar'],
-    ['Ambon', -3.6954, 128.1814, 9, 'WIT', 'Asia/Jayapura'],
-    ['Jayapura', -2.5916, 140.6690, 9, 'WIT', 'Asia/Jayapura'],
-    ['Makkah', 21.4225, 39.8262, 3, 'AST', 'Asia/Riyadh'],
-    ['Madinah', 24.4686, 39.6142, 3, 'AST', 'Asia/Riyadh'],
-    ['Kuala Lumpur', 3.1390, 101.6869, 8, 'MYT', 'Asia/Kuala_Lumpur'],
-    ['Singapura', 1.3521, 103.8198, 8, 'SGT', 'Asia/Singapore'],
-    ['Bandar Seri Begawan', 4.9031, 114.9398, 8, 'BNT', 'Asia/Brunei'],
-    ['Kairo', 30.0444, 31.2357, 2, 'EET', 'Africa/Cairo'],
-    ['Istanbul', 41.0082, 28.9784, 3, 'TRT', 'Europe/Istanbul'],
-    ['London', 51.5074, -0.1278, 0, 'GMT', 'Europe/London'],
-    ['Paris', 48.8566, 2.3522, 1, 'CET', 'Europe/Paris'],
-    ['Amsterdam', 52.3676, 4.9041, 1, 'CET', 'Europe/Amsterdam'],
-    ['New York', 40.7128, -74.0060, -5, 'EST', 'America/New_York'],
-    ['Chicago', 41.8781, -87.6298, -6, 'CST', 'America/Chicago'],
-    ['Los Angeles', 34.0522, -118.2437, -8, 'PST', 'America/Los_Angeles'],
-    ['Sydney', -33.8688, 151.2093, 10, 'AEST', 'Australia/Sydney'],
-    ['Melbourne', -37.8136, 144.9631, 10, 'AEST', 'Australia/Melbourne'],
-    ['Tokyo', 35.6762, 139.6503, 9, 'JST', 'Asia/Tokyo'],
-    ['Seoul', 37.5665, 126.9780, 9, 'KST', 'Asia/Seoul'],
-    ['Delhi', 28.6139, 77.2090, 5.5, 'IST', 'Asia/Kolkata'],
-    ['Karachi', 24.8607, 67.0011, 5, 'PKT', 'Asia/Karachi'],
-    ['Dubai', 25.2048, 55.2708, 4, 'GST', 'Asia/Dubai'],
-    ['Toronto', 43.6532, -79.3832, -5, 'EST', 'America/Toronto']
-  ].map(function (c) {
-    return { name: c[0], lat: c[1], lng: c[2], tz: c[3], zone: c[4], iana: c[5] };
-  });
+  // Sumber tunggal: window.PrayerTimes.CITIES (dipakai juga oleh display.html).
+  var CITIES = PT.CITIES;
 
   /* ----------------------------- linimasa waktu ------------------------------ */
   var TIMELINE = [
@@ -132,42 +92,12 @@
   }
 
   /* --------------------------------- zona waktu ------------------------------ */
-  var deviceZone = '';
-  try { deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { deviceZone = ''; }
-  var zoneSupported = (function () {
-    try {
-      new Intl.DateTimeFormat('en-US', { timeZone: 'UTC' });
-      return true;
-    } catch (e) { return false; }
-  })();
-
-  // Offset UTC (jam) di suatu zona IANA pada saat tertentu — memperhitungkan DST.
-  function zoneOffsetAt(iana, date) {
-    if (!zoneSupported || !iana) return null;
-    try {
-      var dtf = new Intl.DateTimeFormat('en-US', {
-        timeZone: iana, hour12: false,
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      });
-      var map = {};
-      dtf.formatToParts(date).forEach(function (p) { map[p.type] = p.value; });
-      var hour = parseInt(map.hour, 10) % 24;
-      var asUTC = Date.UTC(parseInt(map.year, 10), parseInt(map.month, 10) - 1, parseInt(map.day, 10),
-        hour, parseInt(map.minute, 10), parseInt(map.second, 10));
-      return (asUTC - Math.floor(date.getTime() / 1000) * 1000) / 3600000;
-    } catch (e) { return null; }
-  }
-
-  function zoneLabelFor(iana, date) {
-    if (!zoneSupported || !iana) return '';
-    try {
-      var parts = new Intl.DateTimeFormat('en-US', { timeZone: iana, timeZoneName: 'short' })
-        .formatToParts(date);
-      var tz = parts.filter(function (p) { return p.type === 'timeZoneName'; })[0];
-      return tz ? tz.value : '';
-    } catch (e) { return ''; }
-  }
+  // Utilitas zona waktu tinggal di prayer-times.js agar dipakai bersama display.html.
+  var deviceZone = PT.DEVICE_ZONE;
+  var zoneSupported = PT.ZONE_SUPPORTED;
+  var zoneOffsetAt = PT.zoneOffsetAt;
+  var zoneLabelFor = PT.zoneLabelFor;
+  var formatOffset = PT.formatOffset;
 
   // Kota terdekat secara jarak lingkaran besar — dipakai hanya bila koordinat
   // bukan berasal dari daftar kota.
@@ -264,14 +194,6 @@
 
   function tzOffsetOf(settings, date) {
     return resolveZone(settings, date || new Date()).offset;
-  }
-
-  function formatOffset(h) {
-    var sign = h < 0 ? '-' : '+';
-    var abs = Math.abs(h);
-    var hh = Math.floor(abs);
-    var mm = Math.round((abs - hh) * 60);
-    return 'UTC' + sign + hh + (mm ? ':' + String(mm).padStart(2, '0') : '');
   }
 
   function formatClock(hoursDecimal, use12) {

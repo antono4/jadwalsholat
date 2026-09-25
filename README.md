@@ -94,3 +94,24 @@ satu menit.
 - Untuk papan masjid, gunakan mode layar penuh (`F`) dan matikan tidur layar pada perangkat.
 - Jadwal sebulan bisa langsung dicetak lewat tombol **Cetak**; gaya cetak sudah diatur.
 - Hormati preferensi `prefers-reduced-motion` dan `prefers-contrast`; keduanya sudah ditangani.
+
+## Display TV Masjid (`display.html`)
+
+Halaman terpisah untuk papan TV masjid: layar penuh, foto masjid berganti otomatis, dan
+tampilan yang mengikuti waktu sholat tanpa operator. Buka `display.html` langsung; tidak
+memerlukan build.
+
+- **Jadwal nyata.** Semua jam, tanggal Hijriah, pasaran Jawa, dan hitung mundur dihitung dari
+  `prayer-times.js` lewat `window.PrayerTimes`. Tidak ada angka tetap di markup.
+- **Mode otomatis** berbasis rentang waktu sungguhan: slide informasi sebelum adzan, hitung
+  mundur adzan, saat adzan, doa setelah adzan, hitung mundur iqomah, saat iqomah, lalu saat
+  sholat. Setelahnya kembali ke tampilan utama sampai waktu sholat berikutnya.
+- **Simulator** untuk uji/review disembunyikan secara bawaan. Munculkan dengan `Ctrl+Shift+D`
+  atau tambahkan `?sim=1` pada URL. Jangan diaktifkan di papan yang dipakai jamaah.
+- **Setelan** tersimpan di `localStorage` dengan kunci `jadwal-sholat-tv/v1`: nama masjid, kota
+  (menentukan jadwal sekaligus zona waktu), metode hisab, durasi tiap tahap, petugas Jum'at,
+  agenda, dan daftar foto. Tombol **Kembalikan bawaan** menghapusnya.
+- **Foto** memakai aset lokal di `assets/galeri/` (lihat `kredit.json` untuk lisensi), tampil
+  berganti dengan efek silang. Foto menutupi seluruh layar pada tampilan utama, bukan hanya
+  satu panel.
+- Tekan `S` untuk membuka pengaturan, `Esc` untuk menutup.
