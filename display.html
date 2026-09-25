@@ -10,7 +10,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@600;700;800&family=Marcellus&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
 <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -21,7 +21,7 @@
         fontFamily: {
           sans: ['"Plus Jakarta Sans"', 'sans-serif'],
           arabic: ['"Amiri"', 'serif'],
-          display: ['"Cinzel"', 'serif'],
+          display: ['"Marcellus"', '"Cinzel"', 'serif'],
           mono: ['"Space Mono"', 'monospace']
         },
         colors: {
@@ -53,17 +53,43 @@
     background: rgba(15, 23, 42, 0.82);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(234, 179, 8, 0.28);
+  }
+  /* Tenunan bintang-delapan samar, senada dengan dasbor web. */
+  .glass-panel, .glass-card { position: relative; }
+  .glass-panel::after, .glass-card::after {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23facc15' stroke-width='1'%3E%3Cpath d='M28 4l6 18 18 6-18 6-6 18-6-18-18-6 18-6z'/%3E%3Cpath d='M28 14l14 14-14 14-14-14z'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 56px 56px;
+    opacity: .04;
+    mix-blend-mode: overlay;
+    pointer-events: none;
   }
   .glass-card {
     background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(234, 179, 8, 0.22);
   }
   .glass-card-active {
     background: linear-gradient(135deg, rgba(234, 179, 8, 0.3) 0%, rgba(14, 116, 144, 0.7) 100%);
     border: 2px solid rgba(250, 204, 21, 0.9);
     box-shadow: 0 0 25px rgba(250, 204, 21, 0.4);
+  }
+  /* Kartu waktu: kepala lengkung ala mihrab, seperti kartu di dasbor web.
+     Spesifisitas dinaikkan agar tidak ditimpa kelas rounded-* Tailwind. */
+  .glass-card.prayer-arch {
+    border-radius: 48% 48% 12px 12px / 24px 24px 12px 12px;
+    padding-top: 38px;
+  }
+  /* Bilah atas: pemisah muqarnas di kakinya. */
+  .muqarnas-rule {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='16' viewBox='0 0 40 16'%3E%3Cpath d='M0 15h40M0 14c2.5-9 7.5-13 10-13s7.5 4 10 4 7.5-4 10-4 7.5 4 10 13' fill='none' stroke='%23facc15' stroke-width='1'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-position: center;
+    height: 16px;
+    opacity: .35;
   }
   .progress-ring__circle {
     transition: stroke-dashoffset 0.35s;
@@ -123,8 +149,8 @@
 
   <header class="glass-panel p-3.5 lg:p-4 rounded-2xl border-gold-500/30 flex justify-between items-center shadow-2xl relative z-10">
     <div class="flex items-center gap-4 min-w-0">
-      <div class="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-gradient-to-tr from-gold-500 to-emerald-600 flex items-center justify-center p-0.5 shadow-lg shrink-0">
-        <div class="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+      <div class="w-12 h-14 lg:w-14 lg:h-16 rounded-t-full rounded-b-2xl bg-gradient-to-tr from-gold-500 to-emerald-600 flex items-center justify-center p-0.5 shadow-lg shrink-0">
+        <div class="w-full h-full bg-slate-950 rounded-t-full rounded-b-[14px] flex items-center justify-center">
           <i data-lucide="building-2" class="w-7 h-7 lg:w-8 lg:h-8 text-gold-400"></i>
         </div>
       </div>
@@ -140,6 +166,8 @@
       </div>
     </div>
   </header>
+
+  <div class="muqarnas-rule relative z-10"></div>
 
   <main class="grid grid-cols-12 gap-3 lg:gap-4 my-2 lg:my-3 flex-1 items-stretch overflow-hidden relative z-10">
 
@@ -157,6 +185,22 @@
       </div>
 
       <div class="relative z-10 space-y-2 mt-auto">
+        <div id="kasPanel" class="hidden bg-slate-950/90 backdrop-blur-md p-3.5 rounded-xl border border-emerald-500/30">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+              <i data-lucide="wallet" class="w-6 h-6 text-emerald-300 shrink-0"></i>
+              <div class="min-w-0">
+                <div class="text-[11px] text-slate-300 font-medium">SALDO KAS MASJID</div>
+                <div id="dispKasRows" class="text-[10px] text-slate-400 truncate">—</div>
+              </div>
+            </div>
+            <div class="text-right shrink-0">
+              <div id="dispKasTotal" class="text-base lg:text-xl font-extrabold font-mono text-emerald-300">Rp 0</div>
+              <div id="dispKasAsOf" class="text-[10px] text-slate-400"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="bg-slate-950/90 backdrop-blur-md p-3.5 rounded-xl border border-gold-500/30 flex items-center justify-between">
           <div class="flex items-center gap-3 min-w-0">
             <i data-lucide="calendar-heart" class="w-6 h-6 text-gold-400 shrink-0"></i>
@@ -222,27 +266,27 @@
   </main>
 
   <footer class="grid grid-cols-6 gap-2 lg:gap-3 relative z-10">
-    <div id="card-subuh" class="glass-card p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
+    <div id="card-subuh" class="glass-card prayer-arch p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
       <div class="text-[11px] font-extrabold text-emerald-300 tracking-wider">Subuh</div>
       <div data-time="fajr" class="text-lg lg:text-2xl font-black font-mono text-white mt-0.5">--:--</div>
     </div>
-    <div id="card-dhuha" class="glass-card p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
+    <div id="card-dhuha" class="glass-card prayer-arch p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
       <div class="text-[11px] font-extrabold text-amber-300 tracking-wider">Dhuha</div>
       <div data-time="dhuha" class="text-lg lg:text-2xl font-black font-mono text-white mt-0.5">--:--</div>
     </div>
-    <div id="card-dzuhur" class="glass-card p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
+    <div id="card-dzuhur" class="glass-card prayer-arch p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
       <div class="text-[11px] font-extrabold text-emerald-300 tracking-wider">Dzuhur</div>
       <div data-time="dhuhr" class="text-lg lg:text-2xl font-black font-mono text-white mt-0.5">--:--</div>
     </div>
-    <div id="card-ashar" class="glass-card p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
+    <div id="card-ashar" class="glass-card prayer-arch p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
       <div class="text-[11px] font-extrabold text-emerald-300 tracking-wider">Ashar</div>
       <div data-time="asr" class="text-lg lg:text-2xl font-black font-mono text-white mt-0.5">--:--</div>
     </div>
-    <div id="card-maghrib" class="glass-card p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
+    <div id="card-maghrib" class="glass-card prayer-arch p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
       <div class="text-[11px] font-extrabold text-emerald-300 tracking-wider">Maghrib</div>
       <div data-time="maghrib" class="text-lg lg:text-2xl font-black font-mono text-white mt-0.5">--:--</div>
     </div>
-    <div id="card-isya" class="glass-card p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
+    <div id="card-isya" class="glass-card prayer-arch p-2.5 lg:p-3 rounded-xl text-center border-emerald-500/20">
       <div class="text-[11px] font-extrabold text-emerald-300 tracking-wider">Isya'</div>
       <div data-time="isha" class="text-lg lg:text-2xl font-black font-mono text-white mt-0.5">--:--</div>
     </div>
@@ -526,6 +570,47 @@
         </div>
       </div>
 
+      <div class="border border-emerald-800/60 rounded-xl p-3 bg-emerald-950/20">
+        <label class="flex items-center gap-2 font-bold text-emerald-300 mb-2">
+          <input type="checkbox" id="cfgKasOn" class="w-4 h-4 accent-emerald-400">
+          Tampilkan Saldo Kas Masjid di Papan
+        </label>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div>
+            <label class="block font-medium mb-1 text-slate-300">Kas Umum</label>
+            <input type="text" inputmode="numeric" id="cfgKasUmum" placeholder="45000000"
+                   class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white font-mono focus:border-emerald-400 outline-none">
+          </div>
+          <div>
+            <label class="block font-medium mb-1 text-slate-300">Infaq Jum'at</label>
+            <input type="text" inputmode="numeric" id="cfgKasInfaq" placeholder="12500000"
+                   class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white font-mono focus:border-emerald-400 outline-none">
+          </div>
+          <div>
+            <label class="block font-medium mb-1 text-slate-300">Zakat</label>
+            <input type="text" inputmode="numeric" id="cfgKasZakat" placeholder="30000000"
+                   class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white font-mono focus:border-emerald-400 outline-none">
+          </div>
+          <div>
+            <label class="block font-medium mb-1 text-slate-300">Pembangunan</label>
+            <input type="text" inputmode="numeric" id="cfgKasPembangunan" placeholder="75000000"
+                   class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white font-mono focus:border-emerald-400 outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+          <div>
+            <label class="block font-medium mb-1 text-slate-300">Saldo per Tanggal</label>
+            <input type="date" id="cfgKasAsOf" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white focus:border-emerald-400 outline-none">
+          </div>
+          <div>
+            <label class="block font-medium mb-1 text-slate-300">Catatan (opsional)</label>
+            <input type="text" id="cfgKasNote" placeholder="Laporan keuangan bulan berjalan"
+                   class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white focus:border-emerald-400 outline-none">
+          </div>
+        </div>
+        <p id="cfgKasPreview" class="text-[11px] text-emerald-300/90 mt-2 font-mono">—</p>
+      </div>
+
       <div>
         <label class="block font-medium mb-1 text-slate-300">Alamat Ringkas</label>
         <input type="text" id="cfgMosqueAddr" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white focus:border-gold-400 outline-none">
@@ -628,6 +713,7 @@
 </div>
 
 <script src="prayer-times.js"></script>
+<script src="kas.js"></script>
 <script>
 (function () {
   'use strict';
@@ -678,6 +764,11 @@
     galleryIntervalSecs: 12,
     heroImage: '',
     runningText: 'Jagalah sholat lima waktu, sebab ia adalah tiang agama. • Mari hidupkan sholat berjamaah di masjid. • Kebersihan sebagian dari iman: rawat fasilitas masjid bersama.',
+    /* Saldo kas masjid. Bawaan mati; dinyalakan operator setelah angkanya benar. */
+    kasOn: false,
+    kasAsOf: '',
+    kasNote: '',
+    kasFunds: null,
     tune: {}
   };
 
@@ -723,7 +814,17 @@
   function loadSettings() {
     var raw = null;
     try { raw = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) { raw = null; }
-    return pick(raw, DEFAULTS);
+    return normalizeKasSettings(pick(raw, DEFAULTS));
+  }
+
+  /* Lengkapi bentuk setelan kas. Dipakai jalur muat DAN jalur reset, karena
+     resetSettings menyalin DEFAULTS mentah yang kasFunds-nya masih null. */
+  function normalizeKasSettings(s) {
+    s.kasFunds = Kas.normalize({ funds: s.kasFunds }).funds;
+    s.kasOn = !!s.kasOn;
+    s.kasAsOf = typeof s.kasAsOf === 'string' ? s.kasAsOf : '';
+    s.kasNote = typeof s.kasNote === 'string' ? s.kasNote : '';
+    return s;
   }
 
   function saveSettings() {
@@ -1020,8 +1121,30 @@
     setText('#dispBilal', s.bilal);
     setText('#dispImamPengganti', s.imamPengganti);
     setText('#dispEventTitle', s.eventTitle);
+    renderKas();
     startGallery();
     state.staticRendered = true;
+  }
+
+  /* Saldo kas: hanya tampil bila operator menyalakannya, supaya masjid yang
+     belum mengisi saldo tidak menayangkan "Rp 0" ke jamaah. */
+  function renderKas() {
+    var panel = document.getElementById('kasPanel');
+    if (!panel) return;
+    var s = state.settings;
+    if (!s.kasOn) {
+      panel.classList.add('hidden');
+      return;
+    }
+    var kas = Kas.summary({ asOf: s.kasAsOf, note: s.kasNote, funds: s.kasFunds });
+    panel.classList.remove('hidden');
+    setText('#dispKasTotal', kas.totalText);
+    // Baris ringkas: hanya pos yang bernilai, agar tidak berdesakan di papan.
+    var isi = kas.rows.filter(function (r) { return r.value !== 0; });
+    setText('#dispKasRows', (isi.length ? isi : kas.rows).map(function (r) {
+      return r.short + ' ' + r.compact;
+    }).join(' · '));
+    setText('#dispKasAsOf', kas.asOfText ? 'Per ' + kas.asOfText : '');
   }
 
   // Bagian header yang bergantung tanggal: agenda dan petugas Jum'at.
@@ -1235,11 +1358,40 @@
     document.getElementById('cfgGalleryInterval').value = s.galleryIntervalSecs;
     document.getElementById('cfgHeroImage').value = s.heroImage;
     document.getElementById('cfgRunningText').value = s.runningText;
+    document.getElementById('cfgKasOn').checked = !!s.kasOn;
+    document.getElementById('cfgKasUmum').value = s.kasFunds.umum ? String(s.kasFunds.umum) : '';
+    document.getElementById('cfgKasInfaq').value = s.kasFunds.infaq ? String(s.kasFunds.infaq) : '';
+    document.getElementById('cfgKasZakat').value = s.kasFunds.zakat ? String(s.kasFunds.zakat) : '';
+    document.getElementById('cfgKasPembangunan').value = s.kasFunds.pembangunan ? String(s.kasFunds.pembangunan) : '';
+    document.getElementById('cfgKasAsOf').value = s.kasAsOf || '';
+    document.getElementById('cfgKasNote').value = s.kasNote || '';
+    updateKasPreview();
   }
 
   function openSettingsModal() {
     fillForm();
     document.getElementById('settingsModal').classList.remove('hidden');
+  }
+
+  /* Pratinjau total saat mengetik, supaya operator melihat angka yang akan
+     tampil di papan sebelum menekan Simpan. */
+  function updateKasPreview() {
+    var el = document.getElementById('cfgKasPreview');
+    if (!el) return;
+    var funds = {
+      umum: Kas.coerceRupiah(document.getElementById('cfgKasUmum').value),
+      infaq: Kas.coerceRupiah(document.getElementById('cfgKasInfaq').value),
+      zakat: Kas.coerceRupiah(document.getElementById('cfgKasZakat').value),
+      pembangunan: Kas.coerceRupiah(document.getElementById('cfgKasPembangunan').value)
+    };
+    var s = Kas.summary({ funds: funds });
+    if (s.total === 0) {
+      el.textContent = 'Total seluruh dana: Rp 0 — panel akan tampil kosong.';
+      return;
+    }
+    el.textContent = 'Total ' + s.totalText + ' · ' + s.rows.map(function (r) {
+      return r.short + ' ' + r.compact;
+    }).join(' · ');
   }
 
   function closeSettingsModal() {
@@ -1273,6 +1425,15 @@
     s.galleryIntervalSecs = num('cfgGalleryInterval', DEFAULTS.galleryIntervalSecs);
     s.heroImage = val('cfgHeroImage');
     s.runningText = val('cfgRunningText');
+    s.kasOn = document.getElementById('cfgKasOn').checked;
+    s.kasAsOf = val('cfgKasAsOf');
+    s.kasNote = val('cfgKasNote');
+    s.kasFunds = {
+      umum: Kas.coerceRupiah(document.getElementById('cfgKasUmum').value),
+      infaq: Kas.coerceRupiah(document.getElementById('cfgKasInfaq').value),
+      zakat: Kas.coerceRupiah(document.getElementById('cfgKasZakat').value),
+      pembangunan: Kas.coerceRupiah(document.getElementById('cfgKasPembangunan').value)
+    };
     return s;
   }
 
@@ -1285,10 +1446,20 @@
     render(now());
   }
 
+  /* Dipasang sekali saat boot, bukan di render, supaya tidak menumpuk tiap
+     setelan disimpan. */
+  function bindKasPreview() {
+    ['cfgKasUmum', 'cfgKasInfaq', 'cfgKasZakat', 'cfgKasPembangunan', 'cfgKasNote', 'cfgKasAsOf']
+      .forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateKasPreview);
+      });
+  }
+
   function resetSettings() {
     stopGallery();
     try { localStorage.removeItem(STORE_KEY); } catch (e) { /* abaikan */ }
-    state.settings = clone(DEFAULTS);
+    state.settings = normalizeKasSettings(clone(DEFAULTS));
     state.scheduleCache = null;
     state.staticRendered = false;
     saveSettings();
@@ -1347,6 +1518,7 @@
     applySimVisibility();
     initSimToggle();
     initCursorAutoHide();
+    bindKasPreview();
     render(new Date());
     setInterval(tick, 1000);
 
@@ -1382,6 +1554,8 @@
       state.staticRendered = false;
       render(now());
     },
+    kas: function () { return Kas.summary({ on: state.settings.kasOn, asOf: state.settings.kasAsOf, note: state.settings.kasNote, funds: state.settings.kasFunds }); },
+    renderKas: renderKas,
     resetSettings: resetSettings,
     resetStore: function () { try { localStorage.removeItem(STORE_KEY); } catch (e) {} },
     times: function (d) { return timesFor(d || now()); },

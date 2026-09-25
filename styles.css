@@ -26,6 +26,7 @@ html[data-theme="night"] {
   --emerald: #10b981;
   --ink-title: #facc15;
   --ink-emerald: #6ee7b7;
+  --ink-negatif: #fca5a5;
   --line-emerald: rgba(16, 185, 129, .5);
   --glow: rgba(250, 204, 21, .34);
   --glass-a: rgba(30, 41, 59, .9);
@@ -57,6 +58,7 @@ html[data-theme="dawn"] {
   --emerald: #147a63;
   --ink-title: #7d5416;
   --ink-emerald: #14624f;
+  --ink-negatif: #9f1239;
   --line-emerald: rgba(20, 122, 99, .45);
   --glow: rgba(176, 125, 36, .3);
   --glass-a: rgba(255, 255, 255, .93);
@@ -88,6 +90,7 @@ html[data-theme="emerald"] {
   --emerald: #34d399;
   --ink-title: #facc15;
   --ink-emerald: #6ee7b7;
+  --ink-negatif: #fca5a5;
   --line-emerald: rgba(52, 211, 153, .5);
   --glow: rgba(250, 204, 21, .32);
   --glass-a: rgba(19, 48, 40, .9);
@@ -100,15 +103,27 @@ html[data-theme="emerald"] {
 }
 
 :root {
-  --display: "Cinzel", "Marcellus", "Times New Roman", serif;
+  /* Judul memakai marcellus, punggungan huruf Romawi yang berpadanan dengan
+     ukiran batu masjid; badan teks tetap sans agar angka jam mudah dibaca. */
+  --display: "Marcellus", "Cinzel", "Times New Roman", serif;
   --body: "Plus Jakarta Sans", "Manrope", system-ui, sans-serif;
   --mono: "Space Mono", "DM Mono", ui-monospace, monospace;
   --arabic: "Amiri", "Traditional Arabic", serif;
   --ease: cubic-bezier(.22, .8, .2, 1);
-  --r-lg: 24px;
+  --r-lg: 26px;
   --r-md: 18px;
   --r-sm: 12px;
+  /* Sudut lengkung ala gerbang masjid untuk potongan-potongan kecil. */
+  --arch-lg: 999px 999px 26px 26px;
+  --arch-sm: 999px 999px 14px 14px;
+  /* Kubah dangkal: lebar penuh tapi hanya ~22px tinggi, supaya teks di dalam
+     kartu tidak pernah terpotong garis lengkung. */
+  --arch-top: 48% 48% 26px 26px / 22px 22px 26px 26px;
   --gap: clamp(12px, 1.2vw, 20px);
+  /* Ornamen bintang-delapan, tampak samar seperti tenunan tenun pada dinding. */
+  --ornamen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23facc15' stroke-width='1'%3E%3Cpath d='M28 4l6 18 18 6-18 6-6 18-6-18-18-6 18-6z'/%3E%3Cpath d='M28 14l14 14-14 14-14-14z'/%3E%3C/g%3E%3C/svg%3E");
+  /* Rangkaian lengkung (muqarnas) sebagai pemisah antarbagian. */
+  --muqarnas: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='16' viewBox='0 0 40 16'%3E%3Cpath d='M0 15h40M0 14c2.5-9 7.5-13 10-13s7.5 4 10 4 7.5-4 10-4 7.5 4 10 13' fill='none' stroke='%23facc15' stroke-width='1'/%3E%3C/svg%3E");
 }
 
 /* Atribut presentasi SVG tidak bisa memakai var(); gradien didefinisikan
@@ -240,6 +255,30 @@ html[data-dim="strong"] .atmos__scrim { opacity: 1; }
   -webkit-backdrop-filter: blur(16px);
   box-shadow: var(--shadow);
 }
+/* Tenunan bintang-delapan di sudut panel, samar seperti ukiran dinding masjid.
+   Dibiarkan sangat pudar agar tidak mengganggu angka jadwal di atasnya. */
+.card-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: var(--ornamen);
+  background-size: 62px 62px;
+  opacity: .05;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+/* Garis kemuncak di tepi atas, seperti kepala lengkung pada gerbang. */
+.card-surface::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 50%;
+  width: 62px; height: 2px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--line-strong), transparent);
+  pointer-events: none;
+}
 
 /* --------------------------------- kerangka -------------------------------- */
 .shell {
@@ -271,24 +310,38 @@ html[data-dim="strong"] .atmos__scrim { opacity: 1; }
   -webkit-backdrop-filter: blur(22px) saturate(1.3);
   box-shadow: 0 18px 40px -30px rgba(0, 0, 0, .95);
 }
+/* Rangkaian lengkung di kaki bilah atas, seperti muqarnas pada gerbang masjid. */
+.topbar::after {
+  content: "";
+  position: absolute;
+  left: 50%; bottom: -8px;
+  width: min(420px, 60vw); height: 16px;
+  transform: translateX(-50%);
+  background-image: var(--muqarnas);
+  background-repeat: repeat-x;
+  background-position: center top;
+  opacity: .38;
+  pointer-events: none;
+}
 
 .topbar__id {
   display: flex; align-items: center; gap: 14px;
   min-width: 0;
 }
 .topbar__mark { display: grid; place-items: center; flex: none; }
-/* Lambang masjid dalam kotak gradien emas–zamrud, seperti papan display. */
+/* Lambang masjid berpelengkung: gradien emas–zamrud dengan puncak melengkung,
+   seperti kubah pada papan display. */
 .topbar__mark {
-  width: 50px; height: 50px;
-  border-radius: 16px;
+  width: 50px; height: 56px;
+  border-radius: var(--arch-sm);
   padding: 2px;
   background: linear-gradient(140deg, var(--gold-2), var(--emerald));
   box-shadow: 0 10px 24px -12px var(--glow);
 }
 .topbar__mark .mark {
   width: 100%; height: 100%;
-  padding: 7px;
-  border-radius: 14px;
+  padding: 7px 7px 9px;
+  border-radius: 999px 999px 14px 14px;
   background: var(--bg-0);
 }
 .mark__ring { fill: none; stroke: var(--line-strong); stroke-width: 1.2; }
@@ -510,6 +563,19 @@ html[data-theme="dawn"] .topbar__mark .mark { background: #fffdf7; }
   font-family: var(--arabic); font-size: 1.22em; opacity: .88;
 }
 .clockface__greg { font-size: .76rem; color: var(--txt-3); letter-spacing: .06em; }
+/* Bingkai kepala lengkung (mihrab) mengelilingi isi jam, bukan menembusnya:
+   bingkai tumbuh mengikuti isi, jadi jam dan tanggal selalu berada di dalam. */
+.clockface__inner {
+  display: grid; place-content: center; justify-items: center;
+  gap: 6px;
+  padding: clamp(18px, 2vw, 26px) clamp(22px, 3vw, 44px) clamp(16px, 1.6vw, 22px);
+  border: 1px solid var(--line-soft);
+  border-radius: 999px 999px var(--r-md) var(--r-md);
+  /* Cincin kedua di luar bingkai, seperti dua lapis lengkung pada mihrab. */
+  outline: 1px solid var(--line-soft);
+  outline-offset: 6px;
+  background: radial-gradient(90% 70% at 50% 0%, rgba(250, 204, 21, .07), transparent 70%);
+}
 
 /* Busur matahari */
 .sunpath { grid-area: sunpath; padding: clamp(16px, 1.8vw, 24px); }
@@ -561,15 +627,28 @@ html[data-theme="dawn"] .topbar__mark .mark { background: #fffdf7; }
 .stop {
   position: relative;
   border: 1px solid var(--line-soft);
-  border-radius: var(--r-md);
+  /* Kubah dangkal di tepi atas, seperti kepala lengkung pintu masjid. */
+  border-radius: var(--arch-top);
   background: linear-gradient(135deg, rgba(var(--panel-rgb), .84) 0%, rgba(var(--panel-rgb), .95) 100%);
   backdrop-filter: blur(14px) saturate(1.2);
   -webkit-backdrop-filter: blur(14px) saturate(1.2);
   box-shadow: var(--shadow);
-  padding: 13px 14px 15px;
+  padding: 26px 14px 16px;
   display: flex; flex-direction: column; gap: 3px;
   overflow: hidden;
   transition: border-color .3s, background .3s, transform .3s var(--ease), box-shadow .3s;
+}
+/* Tenunan bintang-delapan, senada dengan panel utama. */
+.stop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--ornamen);
+  background-size: 54px 54px;
+  background-position: center top;
+  opacity: .05;
+  mix-blend-mode: overlay;
+  pointer-events: none;
 }
 .stop:hover { transform: translateY(-2px); border-color: var(--line); box-shadow: var(--shadow), 0 0 0 1px var(--line-soft); }
 
@@ -654,19 +733,29 @@ html[data-theme="dawn"] .topbar__mark .mark { background: #fffdf7; }
 
 /* Kiblat */
 .qibla__body { display: flex; align-items: center; gap: 16px; }
+/* Dial berpelengkung seperti mihrab kecil, dengan cincin kuningan */
 .qibla__dial {
-  width: 106px; height: 106px; flex: none;
+  width: 116px; height: 116px; flex: none;
+  padding: 6px;
+  border-radius: 50%;
+  background: radial-gradient(80% 80% at 50% 30%, rgba(250, 204, 21, .1), transparent 70%);
+  border: 1px solid var(--line-soft);
   filter: drop-shadow(0 0 14px var(--glow));
 }
 .qibla__ring { fill: none; stroke: var(--line-soft); stroke-width: 1; }
 .qibla__ring--in { stroke: var(--line-soft); }
 .qibla__ticks line { stroke: var(--line); stroke-width: 1; }
+/* Tiap kelipatan 30° dapat guratan lebih panjang dan lebih terang, seperti
+   skala pada astrolab. */
+.qibla__ticks line.qibla__tick--major { stroke: var(--line-strong); stroke-width: 1.6; }
 .qibla__card {
   fill: var(--txt-3); font-family: var(--body);
   font-size: 9px; letter-spacing: .1em;
 }
 .qibla__needle path { fill: var(--gold-2); }
 .qibla__hub { fill: var(--gold-2); }
+/* Lingkaran samar di ujung jarum, seperti bunga kompas. */
+.qibla__hub-halo { fill: none; stroke: var(--gold-2); stroke-width: .8; opacity: .5; }
 .qibla__needle { transform-box: fill-box; transform-origin: center; transition: transform .8s var(--ease); }
 
 .qibla__read { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
@@ -706,6 +795,73 @@ html[data-theme="dawn"] .topbar__mark .mark { background: #fffdf7; }
   font-size: .64rem; color: var(--txt-3); line-height: 1.5;
 }
 .panel__credit[hidden] { display: none; }
+
+/* ----------------------------------- kas ---------------------------------- */
+/* Panel saldo memakai corak zamrud agar terbedakan dari panel jadwal yang
+   bernuansa emas. Teks memakai --ink-emerald agar lolos kontras di 3 tema. */
+.kas__head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; margin-bottom: 12px;
+}
+.kas__head .panel__title { margin-bottom: 0; }
+.kas__asof {
+  font-size: .62rem; color: var(--txt-3);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.kas__total {
+  font-family: var(--mono); font-weight: 700;
+  font-size: clamp(1.15rem, 1.7vw, 1.5rem);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.01em;
+  color: var(--ink-emerald);
+  line-height: 1.15;
+}
+.kas__total-note {
+  margin-top: 3px;
+  font-size: .62rem; color: var(--txt-3);
+}
+.kas {
+  list-style: none; margin: 13px 0 0; padding: 0;
+  display: grid; gap: 9px;
+}
+/* Baris dana: label dan nilai sebaris, bar porsi menempati baris penuh. */
+.kasrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 3px 10px;
+}
+.kasrow__label { font-size: .72rem; color: var(--txt-2); }
+.kasrow__val {
+  font-family: var(--mono); font-weight: 700; font-size: .78rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--txt-1); text-align: right;
+}
+.kasrow__val--negatif { color: var(--ink-negatif); }
+.kasrow__track {
+  grid-column: 1 / -1;
+  height: 4px; border-radius: 999px;
+  background: rgba(148, 163, 184, .22);
+  overflow: hidden;
+}
+.kasrow__fill {
+  display: block; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--emerald), var(--gold-2));
+}
+.kas__note {
+  margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+  font-size: .64rem; color: var(--txt-3); line-height: 1.5;
+}
+.kas__note[hidden] { display: none; }
+/* Pratinjau total di pane setelan. */
+.kas-preview {
+  margin-top: 12px;
+  font-family: var(--mono);
+  color: var(--ink-emerald);
+}
+.kas-preview[hidden] { display: none; }
 
 /* -------------------------------- pengumuman -------------------------------- */
 .ticker {

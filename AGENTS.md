@@ -10,6 +10,8 @@ Situs statis tanpa build dan tanpa dependensi. Berkas inti:
 - `styles.css` — tema, tata letak, gaya cetak
 - `prayer-times.js` — mesin hisab astronomis (Meeus/PrayTimes) + kalender Hijriah
 - `app.js` — logika dashboard, memakai `window.PrayerTimes`
+- `kas.js` — ringkasan saldo kas masjid, dipakai `index.html` dan `display.html`
+- `display.html` — papan display TV masjid (Tailwind CDN, mandiri)
 
 Urutan pemuatan di `index.html`: `prayer-times.js` lalu `app.js`. `app.js` menganggap
 `window.PrayerTimes` sudah ada.
@@ -96,6 +98,41 @@ Titik temu DOM yang dipakai `app.js`:
 - Jangan menaruh `card-surface` pada `.ticker__badge`: bayangan panelnya bentrok dengan lencana.
 - Titik berdenyut lencana memakai pseudo-elemen `::before` karena `app.js` menimpa
   `textContent` lencana, sehingga markah tambahan di dalamnya akan terhapus.
+
+## Bahasa visual Timur Tengah (perombakan profesional)
+
+Lapisan gaya ini menimpa kosakata "kaca" sebelumnya dengan rujukan arsitektur masjid.
+Tetap tiga tema; jangan menambah tema keempat.
+
+- Judul memakai `Marcellus` (fallback `Cinzel`) lewat token `--display`. Font harus
+  didaftarkan di `@import`/`<link>` Google Fonts **kedua** halaman; kalau tidak, peramban
+  jatuh ke `Cinzel` tanpa galat (pernah terjadi di `index.html`).
+- Ornamen: `--ornamen` (bintang-delapan) sebagai tenunan samar pada permukaan, dan
+  `--muqarnas` (deret lengkung) sebagai pemisah bagian. Di `display.html` keduanya
+  ditulis sebagai data-URI langsung karena berkas itu mandiri tanpa `styles.css`.
+- Kepala lengkung: `--arch-lg`/`--arch-sm` untuk potongan kecil (lambang, bingkai jam),
+  dan `--arch-top` untuk kartu rel waktu. `--arch-top` sengaja berbentuk **kubah
+  dangkal** (`48% 48% … / 22px …`), bukan setengah lingkaran: atap penuh memangkas
+  label `stop__state`/`stop__ar` di sudut kartu yang sempit.
+- Kelas `prayer-arch` di `display.html` harus ditulis `.glass-card.prayer-arch` agar
+  menang atas kelas `rounded-*` Tailwind; `.prayer-arch` sendirian kalah prioritas dan
+  kartu tetap kotak.
+- Kartu rel dan papan display memakai lajur kubah yang sama supaya kedua halaman terbaca
+  sebagai satu keluarga.
+
+### Menguji lengkung
+
+Uji lengkung tidak boleh memakai model "sudut bundar radius = lebar/2". Harus dibaca
+`borderTopLeftRadius` dkk. dari `getComputedStyle`, karena atap elips sah-sah saja
+(`48% 48% … / 22px …`) dan model bulat akan melaporkan positif palsu. Batas isi pada
+tinggi `y` dihitung dari elips sudut yang aktif:
+
+```
+z = rx * (1 - sqrt(1 - ((ry - y)/ry)^2))
+```
+
+Uji ini punya gigi: menyuntik `--arch-top: 999px …` ke `<html>` harus langsung
+menghasilkan laporan pelanggaran; kalau tidak, uji tumpul.
 
 ## Uji yang dipakai saat perombakan (di luar repo, di `/tmp`)
 

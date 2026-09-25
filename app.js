@@ -61,7 +61,13 @@
     galleryOn: true,
     galleryInterval: 8,
     galleryDim: 'medium',
-    galleryList: ''
+    galleryList: '',
+    /* Saldo kas disimpan per dana. Bawaan mati supaya masjid yang belum
+       mengisi saldo tidak menampilkan "Rp 0" di papan jamaah. */
+    kasOn: false,
+    kasAsOf: '',
+    kasNote: '',
+    kasFunds: null
   };
 
   var state = {
@@ -228,6 +234,11 @@
     try { saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) { saved = null; }
     var s = deepMerge(clone(DEFAULTS), saved);
     s.tune = deepMerge(clone(DEFAULTS.tune), (saved && saved.tune) || {});
+    // Lengkapi dana yang hilang agar data lama/rusak tidak membuat panel kosong.
+    s.kasFunds = Kas.normalize({ funds: s.kasFunds }).funds;
+    s.kasOn = !!s.kasOn;
+    s.kasAsOf = typeof s.kasAsOf === 'string' ? s.kasAsOf : '';
+    s.kasNote = typeof s.kasNote === 'string' ? s.kasNote : '';
     return s;
   }
 
@@ -489,8 +500,11 @@
       var html = '';
       for (var a = 0; a < 360; a += 15) {
         var major = a % 90 === 0;
-        html += '<line x1="60" y1="' + (major ? 6 : 9) + '" x2="60" y2="' + (major ? 16 : 13) + '" ' +
-                'transform="rotate(' + a + ' 60 60)"/>';
+        var sedang = !major && a % 30 === 0;
+        html += '<line x1="60" y1="' + (major ? 6 : (sedang ? 8 : 9)) + '" x2="60" y2="' +
+                (major ? 16 : (sedang ? 14 : 13)) + '"' +
+                (major ? ' class="qibla__tick--major"' : '') +
+                ' transform="rotate(' + a + ' 60 60)"/>';
       }
       ticks.innerHTML = html;
     }
@@ -507,6 +521,50 @@
   function compass(deg) {
     var dirs = ['Utara', 'Timur Laut', 'Timur', 'Tenggara', 'Selatan', 'Barat Daya', 'Barat', 'Barat Laut'];
     return dirs[Math.round(deg / 45) % 8];
+  }
+
+  /* ---------------------------------- kas ----------------------------------- */
+  /* Panel saldo hanya tampil bila operator menyalakannya, supaya masjid yang
+     belum mengisi saldo tidak menayangkan "Rp 0" ke jamaah. */
+  function renderKas() {
+    var panel = $('[data-kas-card]');
+    if (!panel) return;
+
+    var aktif = !!state.settings.kasOn;
+    panel.hidden = !aktif;
+    if (!aktif) return;
+
+    var kas = Kas.summary({
+      on: true,
+      asOf: state.settings.kasAsOf,
+      note: state.settings.kasNote,
+      funds: state.settings.kasFunds
+    });
+
+    $('[data-kas-total]').textContent = kas.totalText;
+    $('[data-kas-total-compact]').textContent = kas.totalCompact;
+
+    var asof = $('[data-kas-asof]');
+    asof.textContent = kas.asOfText ? 'Per ' + kas.asOfText : 'Belum ada tanggal';
+    asof.hidden = false;
+
+    var note = $('[data-kas-note]');
+    note.textContent = kas.note;
+    note.hidden = !kas.note;
+
+    // Baris dana: label, nilai, dan bar porsi. Dana bernilai 0 tetap
+    // ditampilkan agar jamaah tahu posnya ada, hanya barnya kosong.
+    var list = $('[data-kas-rows]');
+    list.innerHTML = kas.rows.map(function (r) {
+      return '<li class="kasrow" data-kas-row="' + r.key + '">' +
+        '<span class="kasrow__label">' + esc(r.label) + '</span>' +
+        '<span class="kasrow__val' + (r.value < 0 ? ' kasrow__val--negatif' : '') + '"' +
+        ' data-kas-value>' + esc(r.text) + '</span>' +
+        '<span class="kasrow__track" aria-hidden="true">' +
+        '<span class="kasrow__fill" style="width:' + (r.share * 100).toFixed(1) + '%"></span>' +
+        '</span>' +
+        '</li>';
+    }).join('');
   }
 
   /* -------------------------------- busur matahari ---------------------------- */
@@ -867,6 +925,7 @@
     renderStatus(now, ctx);
     renderTimes(now, ctx);
     renderQibla();
+    renderKas();
     renderArc(now, ctx);
   }
 
@@ -948,7 +1007,7 @@
   /* ---------------------------------- modal --------------------------------- */
   var FORM_FIELDS = ['name', 'address', 'ticker', 'city', 'lat', 'lng', 'tzMode', 'tzOffset',
     'method', 'asr', 'highLat', 'clockFormat', 'theme', 'adhanSound', 'adhanOverlay',
-    'galleryOn', 'galleryInterval', 'galleryDim', 'galleryList'];
+    'galleryOn', 'galleryInterval', 'galleryDim', 'galleryList', 'kasOn', 'kasAsOf'];
 
   function populateSelects() {
     var methodSel = $('[data-in="method"]');
@@ -981,6 +1040,7 @@
     { key: 'hisab', label: 'Hisab' },
     { key: 'ihtiyati', label: 'Ihtiyati' },
     { key: 'tampilan', label: 'Tampilan' },
+    { key: 'kas', label: 'Keuangan' },
     { key: 'latar', label: 'Latar' }
   ];
 
@@ -1058,9 +1118,51 @@
     $$('[data-tune]').forEach(function (el) {
       el.value = s.tune[el.getAttribute('data-tune')] || 0;
     });
+    fillKasForm();
     updateMethodNote();
     updateGalleryNote();
+    updateKasPreview();
     syncThemePicker();
+  }
+
+  /* Nominal dana diisi sebagai angka polos tanpa pemisah ribuan, supaya bisa
+     langsung disunting tanpa harus menghapus titik dulu. */
+  function fillKasForm() {
+    var funds = Kas.normalize({ funds: state.settings.kasFunds }).funds;
+    var note = $('[data-in="kasNote"]');
+    if (note) note.value = state.settings.kasNote || '';
+    Kas.FUNDS.forEach(function (f) {
+      var el = document.querySelector('[data-kas-in="' + f.key + '"]');
+      if (el) el.value = funds[f.key] ? String(funds[f.key]) : '';
+    });
+  }
+
+  function readKasForm() {
+    var funds = {};
+    Kas.FUNDS.forEach(function (f) {
+      var el = document.querySelector('[data-kas-in="' + f.key + '"]');
+      funds[f.key] = el ? Kas.coerceRupiah(el.value) : 0;
+    });
+    var note = $('[data-in="kasNote"]');
+    return { funds: funds, note: note ? note.value : '' };
+  }
+
+  /* Pratinjau total langsung saat mengetik: operator melihat persis angka yang
+     akan tampil di papan sebelum menekan Simpan. */
+  function updateKasPreview() {
+    var el = $('[data-kas-preview]');
+    if (!el) return;
+    el.hidden = false;
+    var kas = readKasForm();
+    var s = Kas.summary({ funds: kas.funds });
+    if (s.total === 0) {
+      el.textContent = 'Total seluruh dana: Rp 0 — panel akan tampil kosong.';
+      return;
+    }
+    var rincian = s.rows.map(function (r) {
+      return r.short + ' ' + Kas.formatCompact(r.value);
+    }).join(' · ');
+    el.textContent = 'Total ' + s.totalText + ' (' + rincian + ')';
   }
 
   function updateGalleryNote(listOverride) {
@@ -1089,6 +1191,9 @@
     $$('[data-tune]').forEach(function (el) {
       s.tune[el.getAttribute('data-tune')] = parseFloat(el.value) || 0;
     });
+    var kas = readKasForm();
+    s.kasFunds = kas.funds;
+    s.kasNote = kas.note;
     return s;
   }
 
@@ -1136,6 +1241,7 @@
     state.fired = {};
     recompute(new Date());
     renderGallery();
+    renderKas();
     syncThemePicker();
     if (message) toast(message);
   }
@@ -1156,6 +1262,12 @@
     });
 
     $('[data-in="method"]').addEventListener('change', updateMethodNote);
+
+    // Nominal kas & catatan: perbarui pratinjau saat mengetik.
+    $$('[data-kas-in]').forEach(function (el) {
+      el.addEventListener('input', updateKasPreview);
+    });
+    $('[data-in="kasNote"]').addEventListener('input', updateKasPreview);
 
     $$('[data-tab]').forEach(function (btn) {
       btn.addEventListener('click', function () { selectPane(btn.getAttribute('data-tab')); });
@@ -1326,6 +1438,8 @@
     openSettings: openSettings,
     openMonthly: openMonthly,
     settings: function () { return state.settings; },
+    kas: function () { return Kas.summary({ on: state.settings.kasOn, asOf: state.settings.kasAsOf, note: state.settings.kasNote, funds: state.settings.kasFunds }); },
+    renderKas: renderKas,
     galleryItems: galleryItems,
     gallery: function () { return { index: state.galleryIndex, paused: state.galleryPaused, items: state.galleryItems.length, running: !!state.galleryTimer }; },
     galleryStep: galleryStep,

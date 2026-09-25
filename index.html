@@ -9,7 +9,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@600;700;800&family=Marcellus&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="styles.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%F0%9F%95%8C%3C/text%3E%3C/svg%3E">
@@ -100,10 +100,12 @@
 
     <!-- Jam & tanggal -->
     <article class="clockface card-surface">
-      <span class="clockface__zone" data-clockface-zone>WIB</span>
-      <p class="clockface__time" data-clock-big>--:--<span class="clockface__sec" data-clockface-sec>:--</span></p>
-      <p class="clockface__hijri"><span data-hijri-ar>—</span> <span data-hijri>—</span></p>
-      <p class="clockface__greg" data-greg>—</p>
+      <div class="clockface__inner">
+        <span class="clockface__zone" data-clockface-zone>WIB</span>
+        <p class="clockface__time" data-clock-big>--:--<span class="clockface__sec" data-clockface-sec>:--</span></p>
+        <p class="clockface__hijri"><span data-hijri-ar>—</span> <span data-hijri>—</span></p>
+        <p class="clockface__greg" data-greg>—</p>
+      </div>
     </article>
 
     <!-- Busur matahari -->
@@ -179,6 +181,7 @@
           <text class="qibla__e qibla__card" x="112" y="64" text-anchor="middle">T</text>
           <g class="qibla__needle" data-qibla-needle>
             <path d="M60 22 L66 60 L60 68 L54 60 Z"/>
+            <circle class="qibla__hub-halo" cx="60" cy="60" r="7"/>
             <circle class="qibla__hub" cx="60" cy="60" r="3.6"/>
           </g>
         </svg>
@@ -188,6 +191,18 @@
           <span class="qibla__dist" data-qibla-dist>—</span>
         </div>
       </div>
+    </article>
+
+    <!-- Saldo kas masjid -->
+    <article class="panel kas card-surface" data-kas-card hidden>
+      <div class="kas__head">
+        <h2 class="panel__title">Saldo Kas Masjid</h2>
+        <span class="kas__asof" data-kas-asof>—</span>
+      </div>
+      <p class="kas__total" data-kas-total>Rp 0</p>
+      <p class="kas__total-note">Total seluruh dana · <span data-kas-total-compact>Rp 0</span></p>
+      <ul class="kas" data-kas-rows></ul>
+      <p class="kas__note" data-kas-note hidden></p>
     </article>
 
     <!-- Waktu lain -->
@@ -363,6 +378,48 @@
         </label>
       </section>
 
+      <section class="pane" data-pane="kas">
+        <h3 class="pane__title">Saldo Kas Masjid</h3>
+        <p class="pane__note">Saldo per pos dana ditampilkan di dashboard dan dapat ikut tampil di papan TV. Isi angka rupiah tanpa titik, atau dengan titik sebagai pemisah ribuan — keduanya dibaca sama.</p>
+        <label class="switch">
+          <input type="checkbox" data-in="kasOn">
+          <span class="switch__track"><span class="switch__dot"></span></span>
+          <span class="switch__text">Tampilkan saldo kas di dashboard dan papan TV</span>
+        </label>
+        <div class="field-row">
+          <label class="field">
+            <span>Saldo kas umum</span>
+            <input type="text" inputmode="numeric" data-kas-in="umum" placeholder="mis. 45000000">
+          </label>
+          <label class="field">
+            <span>Infaq &amp; sedekah Jum'at</span>
+            <input type="text" inputmode="numeric" data-kas-in="infaq" placeholder="mis. 12500000">
+          </label>
+        </div>
+        <div class="field-row">
+          <label class="field">
+            <span>Zakat &amp; zakat fitrah</span>
+            <input type="text" inputmode="numeric" data-kas-in="zakat" placeholder="mis. 30000000">
+          </label>
+          <label class="field">
+            <span>Pembangunan &amp; renovasi</span>
+            <input type="text" inputmode="numeric" data-kas-in="pembangunan" placeholder="mis. 75000000">
+          </label>
+        </div>
+        <div class="field-row">
+          <label class="field">
+            <span>Saldo per tanggal</span>
+            <input type="date" data-in="kasAsOf">
+          </label>
+        </div>
+        <label class="field">
+          <span>Catatan singkat (opsional)</span>
+          <input type="text" data-in="kasNote" placeholder="mis. Laporan keuangan bulan berjalan">
+        </label>
+        <p class="field__note kas-preview" data-kas-preview hidden></p>
+        <p class="field__note" data-kas-hint>Angka ini tampil ke jamaah. Cocokkan dengan laporan DKM sebelum dinyalakan.</p>
+      </section>
+
       <section class="pane" data-pane="latar">
         <h3 class="pane__title">Latar Foto</h3>
         <p class="pane__note">Foto masjid tampil sebagai latar seluruh layar dan berganti sendiri, sehingga jadwal tetap terbaca di atasnya.</p>
@@ -441,6 +498,7 @@
 <div class="toast" data-toast role="status" aria-live="polite" hidden></div>
 
 <script src="prayer-times.js"></script>
+<script src="kas.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
