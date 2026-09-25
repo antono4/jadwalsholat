@@ -577,6 +577,48 @@ html[data-theme="dawn"] .topbar__mark .mark { background: #fffdf7; }
   background: radial-gradient(90% 70% at 50% 0%, rgba(250, 204, 21, .07), transparent 70%);
 }
 
+/* Cuaca di sebelah jam. Diletakkan di dalam kartu jam supaya waktu dan cuaca
+   terbaca sebagai satu blok; angkanya sendiri tetap ditandai saat sudah basi. */
+.cuaca {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.cuaca[hidden] { display: none; }
+.cuaca__loading { font-size: .74rem; color: var(--txt-3); letter-spacing: .06em; }
+.cuaca__head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.cuaca__ikon { display: inline-flex; color: var(--ink-gold); }
+.cuaca__ikon-svg { width: 30px; height: 30px; display: block; }
+.cuaca__main { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.cuaca__temp {
+  font-family: var(--mono); font-weight: 700;
+  font-size: 1.5rem; line-height: 1;
+  color: var(--txt-1);
+  font-variant-numeric: tabular-nums;
+}
+.cuaca__label { font-size: .8rem; color: var(--txt-2); }
+.cuaca__meta { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin: 0; }
+.cuaca__item { display: flex; align-items: baseline; gap: 5px; }
+.cuaca__item dt {
+  font-size: .6rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--txt-3);
+}
+.cuaca__item dd {
+  margin: 0; font-size: .74rem;
+  color: var(--txt-1); font-family: var(--mono); font-weight: 700;
+}
+.cuaca__note { font-size: .64rem; color: var(--txt-3); margin: 0; letter-spacing: .04em; }
+/* Data yang tidak lagi segar diredupkan dengan mengganti warna teks, bukan
+   opacity, supaya kontrasnya tetap terukur dan lolos ambang. */
+.cuaca[data-state="basi"] .cuaca__temp,
+.cuaca[data-state="luring"] .cuaca__temp { color: var(--txt-2); }
+.cuaca[data-state="basi"] .cuaca__label,
+.cuaca[data-state="luring"] .cuaca__label { color: var(--txt-3); }
+
 /* Busur matahari */
 .sunpath { grid-area: sunpath; padding: clamp(16px, 1.8vw, 24px); }
 .sunpath__head {

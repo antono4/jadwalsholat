@@ -67,7 +67,10 @@
     kasOn: false,
     kasAsOf: '',
     kasNote: '',
-    kasFunds: null
+    kasFunds: null,
+    /* Cuaca ikut kota yang dipilih. Bawaan hidup karena kartunya hanya membaca,
+       dan koordinatnya sudah benar sejak awal. */
+    cuacaOn: true
   };
 
   var state = {
@@ -82,7 +85,12 @@
     galleryIndex: 0,
     galleryTimer: null,
     galleryPaused: false,
-    galleryItems: []
+    galleryItems: [],
+    cuacaReading: null,
+    cuacaAt: 0,
+    cuacaTimer: null,
+    cuacaBusy: false,
+    cuacaLastKey: ''
   };
 
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
@@ -239,6 +247,7 @@
     s.kasOn = !!s.kasOn;
     s.kasAsOf = typeof s.kasAsOf === 'string' ? s.kasAsOf : '';
     s.kasNote = typeof s.kasNote === 'string' ? s.kasNote : '';
+    s.cuacaOn = s.cuacaOn !== false;
     return s;
   }
 
@@ -523,7 +532,91 @@
     return dirs[Math.round(deg / 45) % 8];
   }
 
+  /* ---------------------------------- cuaca ---------------------------------- */
+
+  /* Kota dipakai hanya sebagai cadangan koordinat bila setelan belum menyimpan
+     lat/lng sendiri. */
+  function cityFor(nama) {
+    var found = CITIES.filter(function (c) { return c.name === nama; })[0];
+    return found || CITIES[0];
+  }
+
+  /* Koordinat cuaca mengikuti kota yang dipilih, bukan daftar terpisah, supaya
+     suhu dan jadwal sholat tidak pernah mengacu tempat berbeda. */
+  function cuacaCoords() {
+    var s = state.settings;
+    var lat = Number(s.lat), lng = Number(s.lng);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat: lat, lng: lng };
+    var c = cityFor(s.city);
+    return { lat: c.lat, lng: c.lng };
+  }
+
+  /* Gambar cuaca ke wadahnya. `nada` diberikan saat data sudah basi atau gagal,
+     supaya jamaah tahu angkanya bukan bacaan terkini. */
+  function renderCuaca(nada) {
+    var box = $('[data-cuaca]');
+    if (!box) return;
+
+    if (!state.settings.cuacaOn) {
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+
+    var r = state.cuacaReading;
+    if (!r) {
+      box.setAttribute('data-state', 'memuat');
+      box.innerHTML = '<span class="cuaca__loading">Memuat cuaca…</span>';
+      return;
+    }
+
+    var d = Cuaca.describe(r);
+    box.setAttribute('data-state', nada || 'siap');
+    box.innerHTML = Cuaca.markup(d, { label: true });
+  }
+
+  /* Ambil cuaca tanpa pernah membuang angka lama saat jaringan gagal: papan
+     yang kehilangan internet tetap menampilkan bacaan terakhir sambil
+     menandainya basi. */
+  function muatCuaca() {
+    if (!state.settings.cuacaOn || !window.Cuaca) return;
+    if (state.cuacaBusy) return;
+
+    var pos = cuacaCoords();
+    var kunci = Cuaca.cacheKeyFor(pos.lat, pos.lng);
+    if (kunci !== state.cuacaLastKey) {
+      state.cuacaLastKey = kunci;
+      state.cuacaReading = Cuaca.readCache(pos.lat, pos.lng);
+      // Singgahan langsung ditayangkan supaya jaringan lambat tidak membuat
+      // papan kosong selama beberapa detik.
+      if (state.cuacaReading) {
+        renderCuaca(Cuaca.isStale(state.cuacaReading.at) ? 'basi' : 'siap');
+      }
+    }
+
+    state.cuacaBusy = true;
+    Cuaca.fetchReading({ lat: pos.lat, lng: pos.lng }).then(function (r) {
+      state.cuacaBusy = false;
+      state.cuacaReading = r;
+      Cuaca.writeCache(pos.lat, pos.lng, r);
+      renderCuaca('siap');
+    }, function () {
+      state.cuacaBusy = false;
+      renderCuaca(state.cuacaReading ? (Cuaca.isStale(state.cuacaReading.at) ? 'basi' : 'luring') : 'gagal');
+    });
+  }
+
+  /* Singgahan disegarkan tiap sepuluh menit, dan sekali lagi saat tab kembali
+     terlihat supaya papan yang lama menganggur tidak menyajikan angka basi. */
+  function mulaiCuaca() {
+    if (!window.Cuaca) return;
+    muatCuaca();
+    clearInterval(state.cuacaTimer);
+    state.cuacaTimer = setInterval(muatCuaca, Cuaca.REFRESH_MS);
+  }
+
   /* ---------------------------------- kas ----------------------------------- */
+
   /* Panel saldo hanya tampil bila operator menyalakannya, supaya masjid yang
      belum mengisi saldo tidak menayangkan "Rp 0" ke jamaah. */
   function renderKas() {
@@ -1007,7 +1100,7 @@
   /* ---------------------------------- modal --------------------------------- */
   var FORM_FIELDS = ['name', 'address', 'ticker', 'city', 'lat', 'lng', 'tzMode', 'tzOffset',
     'method', 'asr', 'highLat', 'clockFormat', 'theme', 'adhanSound', 'adhanOverlay',
-    'galleryOn', 'galleryInterval', 'galleryDim', 'galleryList', 'kasOn', 'kasAsOf'];
+    'galleryOn', 'galleryInterval', 'galleryDim', 'galleryList', 'kasOn', 'kasAsOf', 'cuacaOn'];
 
   function populateSelects() {
     var methodSel = $('[data-in="method"]');
@@ -1242,6 +1335,8 @@
     recompute(new Date());
     renderGallery();
     renderKas();
+    renderCuaca(state.cuacaReading ? 'siap' : 'memuat');
+    mulaiCuaca();
     syncThemePicker();
     if (message) toast(message);
   }
@@ -1409,6 +1504,8 @@
     var now = nowForSettings(nowReal);
     recompute(nowReal);
     renderGallery();
+    renderCuaca('memuat');
+    mulaiCuaca();
     checkAdhan(now, state.data);
 
     state.tickTimer = setInterval(tick, 1000);
@@ -1416,7 +1513,11 @@
       renderArc(nowForSettings(new Date()), state.data);
     }, 200));
     document.addEventListener('visibilitychange', function () {
-      if (!document.hidden) recompute(new Date());
+      if (document.hidden) return;
+      recompute(new Date());
+      // Papan yang lama menganggur bisa melewati beberapa putaran singgahan;
+      // segarkan begitu tab kembali terlihat.
+      muatCuaca();
     });
   }
 
@@ -1440,6 +1541,21 @@
     settings: function () { return state.settings; },
     kas: function () { return Kas.summary({ on: state.settings.kasOn, asOf: state.settings.kasAsOf, note: state.settings.kasNote, funds: state.settings.kasFunds }); },
     renderKas: renderKas,
+    cuaca: function () {
+      var pos = cuacaCoords();
+      return {
+        on: !!state.settings.cuacaOn,
+        coords: Cuaca.cacheKeyFor(pos.lat, pos.lng),
+        reading: state.cuacaReading,
+        age: state.cuacaReading ? Cuaca.relativeAge(state.cuacaReading.at) : '',
+        stale: state.cuacaReading ? Cuaca.isStale(state.cuacaReading.at) : false,
+        lastKey: state.cuacaLastKey,
+        busy: state.cuacaBusy
+      };
+    },
+    renderCuaca: renderCuaca,
+    muatCuaca: muatCuaca,
+    setCuacaReading: function (r) { state.cuacaReading = r; renderCuaca('siap'); },
     galleryItems: galleryItems,
     gallery: function () { return { index: state.galleryIndex, paused: state.galleryPaused, items: state.galleryItems.length, running: !!state.galleryTimer }; },
     galleryStep: galleryStep,

@@ -11,6 +11,7 @@ Situs statis tanpa build dan tanpa dependensi. Berkas inti:
 - `prayer-times.js` — mesin hisab astronomis (Meeus/PrayTimes) + kalender Hijriah
 - `app.js` — logika dashboard, memakai `window.PrayerTimes`
 - `kas.js` — ringkasan saldo kas masjid, dipakai `index.html` dan `display.html`
+- `cuaca.js` — pembaca cuaca Open-Meteo, dipakai `index.html` dan `display.html`
 - `display.html` — papan display TV masjid (Tailwind CDN, mandiri)
 
 Urutan pemuatan di `index.html`: `prayer-times.js` lalu `app.js`. `app.js` menganggap
@@ -31,7 +32,8 @@ node --check app.js && node --check prayer-times.js
 ## Hal yang mudah terlewat
 
 - **API publik** ada di `window.JadwalSholat` (`app.js` bagian akhir): `settings()`, `apply(patch)`,
-  `recompute()`, `openSettings()`, `openMonthly()`, dan fungsi latar foto. Tidak ada tolok ukur waktu
+  `recompute()`, `openSettings()`, `openMonthly()`, `kas`/`renderKas`, `cuaca`/`renderCuaca`/
+  `muatCuaca`/`setCuacaReading`, dan fungsi latar foto. Tidak ada tolok ukur waktu
   sholat di API ini; nilai tampil dibaca dari kartu `[data-card-time]`. Untuk angka mentah pakai
   `window.PrayerTimes.calculate(...)`.
 - **Kunci metode hisab huruf kecil**: `kemenag`, `mwl`, `isna`, `egypt`, `makkah` (Umm al-Qura),
@@ -134,11 +136,37 @@ z = rx * (1 - sqrt(1 - ((ry - y)/ry)^2))
 Uji ini punya gigi: menyuntik `--arch-top: 999px …` ke `<html>` harus langsung
 menghasilkan laporan pelanggaran; kalau tidak, uji tumpul.
 
+## Cuaca (Open-Meteo)
+
+`cuaca.js` tidak menyentuh DOM: halaman memanggil `Cuaca.describe()` lalu menyusun markah
+lewat `Cuaca.markup()` — dipakai bersama `index.html` dan `display.html` supaya strukturnya
+tidak digandakan. Tiap halaman hanya menyetel wadah `[data-cuaca]` dan atribut `data-state`
+(`memuat`/`siap`/`luring`/`basi`/`gagal`).
+
+- **Koordinat mengikuti kota sholat**, bukan daftar kota kedua yang bisa melenceng. Dashboard
+  memakai `settings.lat/lng` bila ada; `display.html` memakai `PT.CITIES` karena tidak punya
+  medan koordinat sendiri. Kunci singgahan (`cuaca.js`) ikut koordinat, jadi berpindah kota
+  tidak menyajikan cuaca kota lama.
+- **Angka lama tidak pernah dibuang** saat jaringan gagal: pembacaan terakhir tetap tampil,
+  ditandai `luring` atau `basi`. Saat singgahan ditayangkan lebih dulu (sebelum jaringan
+  menjawab), papan tidak kosong selama permintaan berjalan.
+- **Ambang basi** 45 menit (`STALE_MS`), penyegaran 10 menit (`REFRESH_MS`), ditambah sekali
+  saat tab kembali terlihat. Cap waktu tak dikenal dianggap basi — lebih baik memperingatkan
+  daripada menyajikan angka yang usianya tak dapat dipastikan.
+- **`markup()` menyaring teks** (`opts.note`, label) sebelum masuk `innerHTML`; modul bersama
+  jangan mengandalkan pemanggil untuk itu.
+- `kasFunds` dan setelan kas lain lewat `normalizeSettings` (dulu `normalizeKasSettings`) di
+  `display.html`; `cuacaOn` dilengkapi di sana juga (`s.cuacaOn !== false`) supaya setelan lama
+  yang belum punya kunci tetap menyala.
+- Data basi diredupkan dengan mengganti warna teks, bukan `opacity`, agar kontras tetap terukur.
+
 ## Uji yang dipakai saat perombakan (di luar repo, di `/tmp`)
 
 Tidak ikut masuk repositori, tetapi berguna bila dijalankan lagi di lingkungan yang sama:
-`contract_test.py` (40 pemeriksaan kontrak + kontras per tema), `display_test.py` (32),
-`display_robust_test.py` (17), `display_klik_test.py` (22, mengklik tombol sungguhan), ditambah
+`cuaca_modul_test.js` (51, unit `cuaca.js` tanpa DOM/jaringan), `cuaca_dash_test.py` (44),
+`cuaca_papan_test.py` (52), `contract_test.py` (40 pemeriksaan kontrak + kontras per tema),
+`display_test.py` (32), `display_robust_test.py` (17), `display_klik_test.py` (22, mengklik
+tombol sungguhan), `kas_report_test.py` (38, laporan kas), ditambah
 pembantu `cdp.py`. Semuanya memakai Chrome DevTools Protocol. `contract_test.py` dan
 `display_klik_test.py` menerima URL dasar sebagai argumen; dua uji display lain masih menanam
 `http://localhost:12000` di dalam berkasnya.
@@ -174,7 +202,8 @@ untuk Subuh/Ashar/Maghrib/Isya. Dzuhur berbeda ~2 menit karena ihtiyati Kemenag 
   `renderDayInfo(now)` (agenda dan petugas Jum'at). Interval 1 detik memanggil `tick()`, yang
   menghormati `state.nowOverride` — dipakai oleh `window.DisplayTV.setNow()` saat menguji.
 - `window.DisplayTV` adalah antarmuka uji: `setNow`/`clearNow`, `apply`, `setMode`, `autoMode`,
-  `times`, `resetSettings`. Uji mode otomatis sebaiknya menyuntikkan waktu, bukan menunggu.
+  `times`, `resetSettings`, `cuaca`/`renderCuaca`/`muatCuaca`/`setCuacaReading`. Uji mode otomatis
+  sebaiknya menyuntikkan waktu, bukan menunggu.
 - Seluruh skrip halaman terkurung dalam IIFE. Tujuh fungsi dipanggil lewat `onclick="..."` pada
   markah — `openSettingsModal`, `closeSettingsModal`, `saveSettingsModal`, `resetSettings`,
   `switchMode`, `setAutoFollow`, `toggleDemoCycle` — dan harus diekspos ke `window`, karena
@@ -206,5 +235,5 @@ untuk Subuh/Ashar/Maghrib/Isya. Dzuhur berbeda ~2 menit karena ihtiyati Kemenag 
   dasbor. Persentase "x% dari total" disembunyikan saat total masih nol agar tidak muncul empat
   kali tulisan "0.0% dari total".
 - Uji terkait ada di luar repo (`/tmp/display_test.py`, `/tmp/display_robust_test.py`,
-  `/tmp/display_regress_test.py`, `/tmp/kas_report_test.py`) dan memakai `cdp.py` dengan server
-  di `http://localhost:12000`.
+  `/tmp/display_regress_test.py`, `/tmp/kas_report_test.py`, `/tmp/cuaca_papan_test.py`) dan
+  memakai `cdp.py` dengan server di `http://localhost:12000`.

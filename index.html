@@ -106,6 +106,11 @@
         <p class="clockface__hijri"><span data-hijri-ar>—</span> <span data-hijri>—</span></p>
         <p class="clockface__greg" data-greg>—</p>
       </div>
+      <!-- Cuaca diletakkan di sebelah jam (di bawahnya dalam kartu yang sama)
+           supaya keduanya terbaca sebagai satu blok waktu-andalan. -->
+      <div class="cuaca" data-cuaca="here" data-state="memuat" aria-live="polite">
+        <span class="cuaca__loading">Memuat cuaca…</span>
+      </div>
     </article>
 
     <!-- Busur matahari -->
@@ -376,6 +381,12 @@
           <span class="switch__track"><span class="switch__dot"></span></span>
           <span class="switch__text">Tampilkan layar penuh saat masuk waktu</span>
         </label>
+        <label class="switch">
+          <input type="checkbox" data-in="cuacaOn">
+          <span class="switch__track"><span class="switch__dot"></span></span>
+          <span class="switch__text">Tampilkan cuaca di sebelah jam</span>
+        </label>
+        <p class="pane__note">Cuaca diambil dari Open-Meteo memakai koordinat kota yang dipilih, jadi otomatis ikut saat lokasi diubah. Bila internet putus, angka terakhir tetap tampil dengan penanda waktu.</p>
       </section>
 
       <section class="pane" data-pane="kas">
@@ -498,6 +509,7 @@
 <div class="toast" data-toast role="status" aria-live="polite" hidden></div>
 
 <script src="prayer-times.js"></script>
+<script src="cuaca.js"></script>
 <script src="kas.js"></script>
 <script src="app.js"></script>
 </body>

@@ -98,6 +98,45 @@
   }
   .idle-cursor-hidden { cursor: none; }
 
+  /* Cuaca di sebelah jam. Markah dalamnya memakai kelas `.cuaca__*` yang sama
+     dengan dasbor (dibangun Cuaca.markup), jadi cukup di-scope di sini. Warna
+     memakai palet papan; data basi diredupkan lewat warna teks, bukan opacity,
+     supaya kontrasnya tetap terukur. */
+  .cuaca-disp {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 4px;
+    min-width: 0;
+    padding-left: 12px;
+    border-left: 1px solid rgba(148, 163, 184, .3);
+  }
+  .cuaca-disp[hidden] { display: none; }
+  .cuaca-disp .cuaca__loading { font-size: 11px; color: #94a3b8; }
+  .cuaca-disp .cuaca__head { display: flex; align-items: center; gap: 8px; }
+  .cuaca-disp .cuaca__ikon { display: inline-flex; color: #facc15; }
+  .cuaca-disp .cuaca__ikon-svg { width: 26px; height: 26px; display: block; }
+  .cuaca-disp .cuaca__main { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .cuaca-disp .cuaca__temp {
+    font-family: 'Space Mono', monospace; font-weight: 700;
+    font-size: 1.5rem; line-height: 1; color: #fff;
+    font-variant-numeric: tabular-nums;
+  }
+  .cuaca-disp .cuaca__label { font-size: 11px; color: #cbd5e1; text-align: center; }
+  .cuaca-disp .cuaca__meta {
+    display: flex; gap: 10px; margin: 0;
+    font-size: 10px; color: #94a3b8;
+    font-family: 'Space Mono', monospace;
+  }
+  .cuaca-disp .cuaca__item { display: flex; gap: 4px; }
+  .cuaca-disp .cuaca__item dt { color: #94a3b8; }
+  .cuaca-disp .cuaca__item dd { margin: 0; color: #e2e8f0; }
+  .cuaca-disp .cuaca__note { font-size: 9px; color: #94a3b8; margin: 0; }
+  .cuaca-disp[data-state="basi"] .cuaca__temp,
+  .cuaca-disp[data-state="luring"] .cuaca__temp { color: #cbd5e1; }
+  .cuaca-disp[data-state="basi"] .cuaca__label,
+  .cuaca-disp[data-state="luring"] .cuaca__label { color: #94a3b8; }
+
   /* Bilah simulator disembunyikan secara bawaan. Munculkan dengan Ctrl+Shift+D
      atau tambahkan ?sim=1 pada URL. */
   body:not(.sim-on) #remoteBar { display: none; }
@@ -231,15 +270,22 @@
       </div>
 
       <div class="glass-panel p-3 lg:p-4 rounded-2xl border-gold-500/20 flex flex-col items-center justify-center relative overflow-hidden flex-1">
-        <div class="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full border-4 border-gold-500/40 bg-slate-900/90 shadow-2xl flex items-center justify-center">
-          <span class="absolute top-1 text-[11px] font-bold text-gold-400">12</span>
-          <span class="absolute right-2 text-[11px] font-bold text-slate-400">3</span>
-          <span class="absolute bottom-1 text-[11px] font-bold text-slate-400">6</span>
-          <span class="absolute left-2 text-[11px] font-bold text-slate-400">9</span>
-          <div id="analogHourHand" class="absolute w-1 h-9 lg:h-11 bg-gold-400 rounded-full origin-bottom bottom-1/2 left-1/2 -translate-x-1/2 shadow-md transition-transform duration-300"></div>
-          <div id="analogMinHand" class="absolute w-0.5 h-12 lg:h-14 bg-emerald-300 rounded-full origin-bottom bottom-1/2 left-1/2 -translate-x-1/2 shadow-md transition-transform duration-300"></div>
-          <div id="analogSecHand" class="absolute w-0.5 h-14 lg:h-16 bg-red-500 rounded-full origin-bottom bottom-1/2 left-1/2 -translate-x-1/2 transition-transform duration-75"></div>
-          <div class="w-3 h-3 bg-gold-400 rounded-full z-10 border-2 border-slate-900"></div>
+        <div class="flex items-center justify-center gap-3 lg:gap-5 w-full">
+          <div class="relative w-32 h-32 lg:w-40 lg:h-40 rounded-full border-4 border-gold-500/40 bg-slate-900/90 shadow-2xl flex items-center justify-center shrink-0">
+            <span class="absolute top-1 text-[11px] font-bold text-gold-400">12</span>
+            <span class="absolute right-2 text-[11px] font-bold text-slate-400">3</span>
+            <span class="absolute bottom-1 text-[11px] font-bold text-slate-400">6</span>
+            <span class="absolute left-2 text-[11px] font-bold text-slate-400">9</span>
+            <div id="analogHourHand" class="absolute w-1 h-9 lg:h-11 bg-gold-400 rounded-full origin-bottom bottom-1/2 left-1/2 -translate-x-1/2 shadow-md transition-transform duration-300"></div>
+            <div id="analogMinHand" class="absolute w-0.5 h-12 lg:h-14 bg-emerald-300 rounded-full origin-bottom bottom-1/2 left-1/2 -translate-x-1/2 shadow-md transition-transform duration-300"></div>
+            <div id="analogSecHand" class="absolute w-0.5 h-14 lg:h-16 bg-red-500 rounded-full origin-bottom bottom-1/2 left-1/2 -translate-x-1/2 transition-transform duration-75"></div>
+            <div class="w-3 h-3 bg-gold-400 rounded-full z-10 border-2 border-slate-900"></div>
+          </div>
+          <!-- Cuaca tepat di sebelah jam, dalam kartu yang sama, agar waktu dan
+               cuaca terbaca sebagai satu blok informasi. -->
+          <div class="cuaca-disp" data-cuaca="here" data-state="memuat" aria-live="polite">
+            <span class="cuaca__loading">Memuat cuaca…</span>
+          </div>
         </div>
         <div id="dispDigitalClockText" class="mt-2 text-xl lg:text-2xl font-bold font-mono text-gold-400 tracking-wider"></div>
       </div>
@@ -610,6 +656,14 @@
         </div>
       </div>
 
+      <div class="border border-gold-500/40 rounded-xl p-3 bg-amber-950/20">
+        <label class="flex items-center gap-2 font-bold text-gold-300 mb-1">
+          <input type="checkbox" id="cfgCuacaOn" class="w-4 h-4 accent-amber-400">
+          Tampilkan Cuaca di Sebelah Jam
+        </label>
+        <p class="text-xs text-slate-400">Sumber Open-Meteo, memakai koordinat kota di atas. Bila internet putus, angka terakhir tetap tampil dengan penanda waktu.</p>
+      </div>
+
       <div class="border border-emerald-800/60 rounded-xl p-3 bg-emerald-950/20">
         <label class="flex items-center gap-2 font-bold text-emerald-300 mb-2">
           <input type="checkbox" id="cfgKasOn" class="w-4 h-4 accent-emerald-400">
@@ -757,6 +811,7 @@
 </div>
 
 <script src="prayer-times.js"></script>
+<script src="cuaca.js"></script>
 <script src="kas.js"></script>
 <script>
 (function () {
@@ -814,6 +869,8 @@
     kasAsOf: '',
     kasNote: '',
     kasFunds: null,
+    /* Cuaca ikut kota yang dipilih di setelan sholat. */
+    cuacaOn: true,
     tune: {}
   };
 
@@ -838,7 +895,11 @@
     nowOverride: null,
     scheduleCache: null,
     audioCtx: null,
-    firedAdhan: {}
+    firedAdhan: {},
+    cuacaReading: null,
+    cuacaTimer: null,
+    cuacaBusy: false,
+    cuacaLastKey: ''
   };
 
   /* ------------------------------ utilitas ------------------------------ */
@@ -859,17 +920,19 @@
   function loadSettings() {
     var raw = null;
     try { raw = JSON.parse(localStorage.getItem(STORE_KEY) || 'null'); } catch (e) { raw = null; }
-    return normalizeKasSettings(pick(raw, DEFAULTS));
+    return normalizeSettings(pick(raw, DEFAULTS));
   }
 
-  /* Lengkapi bentuk setelan kas. Dipakai jalur muat DAN jalur reset, karena
-     resetSettings menyalin DEFAULTS mentah yang kasFunds-nya masih null. */
-  function normalizeKasSettings(s) {
+  /* Lengkapi bentuk setelan yang berasal dari penyimpanan lama. Dipakai jalur
+     muat DAN jalur reset, karena resetSettings menyalin DEFAULTS mentah yang
+     kasFunds-nya masih null. */
+  function normalizeSettings(s) {
     s.kasFunds = Kas.normalize({ funds: s.kasFunds }).funds;
     s.kasOn = !!s.kasOn;
     s.kasReportOn = !!s.kasReportOn;
     s.kasAsOf = typeof s.kasAsOf === 'string' ? s.kasAsOf : '';
     s.kasNote = typeof s.kasNote === 'string' ? s.kasNote : '';
+    s.cuacaOn = s.cuacaOn !== false;
     return s;
   }
 
@@ -1187,13 +1250,83 @@
     setText('#dispImamPengganti', s.imamPengganti);
     setText('#dispEventTitle', s.eventTitle);
     renderKas();
+    renderCuaca('memuat');
+    mulaiCuaca();
     startGallery();
     state.staticRendered = true;
   }
 
-  /* Saldo kas. Panel ringkas dan layar laporan punya saklar sendiri, jadi
-     hitung sekali lalu isi keduanya sesuai saklar masing-masing. Masjid yang
-     belum mengisi saldo tidak boleh menayangkan "Rp 0" ke jamaah. */
+  /* -------------------------------- cuaca -------------------------------- */
+
+  /* Koordinat cuaca mengikuti kota sholat yang dipilih, bukan daftar terpisah. */
+  function cuacaCoords() {
+    var c = city(state.settings.city);
+    return { lat: c.lat, lng: c.lng };
+  }
+
+  function renderCuaca(nada) {
+    var box = document.querySelector('[data-cuaca]');
+    if (!box) return;
+
+    if (!state.settings.cuacaOn) {
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+
+    var r = state.cuacaReading;
+    if (!r) {
+      box.setAttribute('data-state', 'memuat');
+      box.innerHTML = '<span class="cuaca__loading">Memuat cuaca…</span>';
+      return;
+    }
+
+    var d = Cuaca.describe(r);
+    box.setAttribute('data-state', nada || 'siap');
+    box.innerHTML = Cuaca.markup(d, {
+      // Papan memuat waktu baca sebagai catatan kecil supaya jamaah tahu
+      // angkanya bukan bacaan real-time.
+      note: nada === 'basi' ? 'Data ' + Cuaca.relativeAge(r.at) : ''
+    });
+  }
+
+  /* Angka lama tidak pernah dibuang saat jaringan gagal: papan yang kehilangan
+     internet tetap menampilkan bacaan terakhir, ditandai basi. */
+  function muatCuaca() {
+    if (!state.settings.cuacaOn || !window.Cuaca) return;
+    if (state.cuacaBusy) return;
+
+    var pos = cuacaCoords();
+    var kunci = Cuaca.cacheKeyFor(pos.lat, pos.lng);
+    if (kunci !== state.cuacaLastKey) {
+      state.cuacaLastKey = kunci;
+      state.cuacaReading = Cuaca.readCache(pos.lat, pos.lng);
+      // Singgahan langsung ditayangkan supaya jaringan lambat tidak membuat
+      // papan kosong selama beberapa detik.
+      if (state.cuacaReading) {
+        renderCuaca(Cuaca.isStale(state.cuacaReading.at) ? 'basi' : 'siap');
+      }
+    }
+
+    state.cuacaBusy = true;
+    Cuaca.fetchReading({ lat: pos.lat, lng: pos.lng }).then(function (r) {
+      state.cuacaBusy = false;
+      state.cuacaReading = r;
+      Cuaca.writeCache(pos.lat, pos.lng, r);
+      renderCuaca('siap');
+    }, function () {
+      state.cuacaBusy = false;
+      renderCuaca(state.cuacaReading ? (Cuaca.isStale(state.cuacaReading.at) ? 'basi' : 'luring') : 'gagal');
+    });
+  }
+
+  function mulaiCuaca() {
+    if (!window.Cuaca) return;
+    muatCuaca();
+    clearInterval(state.cuacaTimer);
+    state.cuacaTimer = setInterval(muatCuaca, Cuaca.REFRESH_MS);
+  }
+
   function renderKas() {
     var panel = document.getElementById('kasPanel');
     var s = state.settings;
@@ -1465,6 +1598,7 @@
     document.getElementById('cfgRunningText').value = s.runningText;
     document.getElementById('cfgKasOn').checked = !!s.kasOn;
     document.getElementById('cfgKasReportOn').checked = !!s.kasReportOn;
+    document.getElementById('cfgCuacaOn').checked = s.cuacaOn !== false;
     document.getElementById('cfgKasUmum').value = s.kasFunds.umum ? String(s.kasFunds.umum) : '';
     document.getElementById('cfgKasInfaq').value = s.kasFunds.infaq ? String(s.kasFunds.infaq) : '';
     document.getElementById('cfgKasZakat').value = s.kasFunds.zakat ? String(s.kasFunds.zakat) : '';
@@ -1533,6 +1667,7 @@
     s.runningText = val('cfgRunningText');
     s.kasOn = document.getElementById('cfgKasOn').checked;
     s.kasReportOn = document.getElementById('cfgKasReportOn').checked;
+    s.cuacaOn = document.getElementById('cfgCuacaOn').checked;
     s.kasAsOf = val('cfgKasAsOf');
     s.kasNote = val('cfgKasNote');
     s.kasFunds = {
@@ -1566,7 +1701,7 @@
   function resetSettings() {
     stopGallery();
     try { localStorage.removeItem(STORE_KEY); } catch (e) { /* abaikan */ }
-    state.settings = normalizeKasSettings(clone(DEFAULTS));
+    state.settings = normalizeSettings(clone(DEFAULTS));
     state.scheduleCache = null;
     state.staticRendered = false;
     saveSettings();
@@ -1629,6 +1764,12 @@
     render(new Date());
     setInterval(tick, 1000);
 
+    // Papan yang lama menganggur bisa melewati beberapa putaran singgahan;
+    // segarkan begitu tab kembali terlihat.
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) muatCuaca();
+    });
+
     // Recompute jadwal tiap pergantian hari tanpa perlu muat ulang.
     setInterval(function () { state.scheduleCache = null; }, 3600000);
   }
@@ -1663,6 +1804,21 @@
     },
     kas: function () { return Kas.summary({ on: state.settings.kasOn, asOf: state.settings.kasAsOf, note: state.settings.kasNote, funds: state.settings.kasFunds }); },
     renderKas: renderKas,
+    cuaca: function () {
+      var pos = cuacaCoords();
+      return {
+        on: !!state.settings.cuacaOn,
+        coords: Cuaca.cacheKeyFor(pos.lat, pos.lng),
+        reading: state.cuacaReading,
+        age: state.cuacaReading ? Cuaca.relativeAge(state.cuacaReading.at) : '',
+        stale: state.cuacaReading ? Cuaca.isStale(state.cuacaReading.at) : false,
+        lastKey: state.cuacaLastKey,
+        busy: state.cuacaBusy
+      };
+    },
+    renderCuaca: renderCuaca,
+    muatCuaca: muatCuaca,
+    setCuacaReading: function (r) { state.cuacaReading = r; renderCuaca('siap'); },
     resetSettings: resetSettings,
     resetStore: function () { try { localStorage.removeItem(STORE_KEY); } catch (e) {} },
     times: function (d) { return timesFor(d || now()); },
