@@ -29,8 +29,8 @@ html[data-theme="night"] {
   --ink-negatif: #fca5a5;
   --line-emerald: rgba(16, 185, 129, .5);
   --glow: rgba(250, 204, 21, .34);
-  --glass-a: rgba(30, 41, 59, .9);
-  --glass-b: rgba(15, 23, 42, .96);
+  --glass-a: rgba(30, 41, 59, .80);
+  --glass-b: rgba(15, 23, 42, .80);
   --glass-edge: rgba(255, 255, 255, .14);
   --shadow: 0 24px 50px -22px rgba(0, 0, 0, .92);
   --aurora: radial-gradient(120% 80% at 50% -10%, rgba(56, 89, 189, .34), transparent 62%),
@@ -61,8 +61,8 @@ html[data-theme="dawn"] {
   --ink-negatif: #9f1239;
   --line-emerald: rgba(20, 122, 99, .45);
   --glow: rgba(176, 125, 36, .3);
-  --glass-a: rgba(255, 255, 255, .93);
-  --glass-b: rgba(255, 252, 245, .97);
+  --glass-a: rgba(255, 255, 255, .80);
+  --glass-b: rgba(255, 252, 245, .80);
   --glass-edge: rgba(120, 90, 40, .18);
   --shadow: 0 24px 50px -26px rgba(90, 62, 22, .55);
   --aurora: radial-gradient(120% 80% at 50% -10%, rgba(240, 200, 130, .5), transparent 62%),
@@ -93,8 +93,8 @@ html[data-theme="emerald"] {
   --ink-negatif: #fca5a5;
   --line-emerald: rgba(52, 211, 153, .5);
   --glow: rgba(250, 204, 21, .32);
-  --glass-a: rgba(19, 48, 40, .9);
-  --glass-b: rgba(6, 32, 26, .96);
+  --glass-a: rgba(19, 48, 40, .80);
+  --glass-b: rgba(6, 32, 26, .80);
   --glass-edge: rgba(255, 255, 255, .14);
   --shadow: 0 24px 50px -22px rgba(0, 0, 0, .92);
   --aurora: radial-gradient(120% 80% at 50% -10%, rgba(16, 150, 118, .34), transparent 62%),
@@ -124,6 +124,18 @@ html[data-theme="emerald"] {
   --ornamen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23facc15' stroke-width='1'%3E%3Cpath d='M28 4l6 18 18 6-18 6-6 18-6-18-18-6 18-6z'/%3E%3Cpath d='M28 14l14 14-14 14-14-14z'/%3E%3C/g%3E%3C/svg%3E");
   /* Rangkaian lengkung (muqarnas) sebagai pemisah antarbagian. */
   --muqarnas: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='16' viewBox='0 0 40 16'%3E%3Cpath d='M0 15h40M0 14c2.5-9 7.5-13 10-13s7.5 4 10 4 7.5-4 10-4 7.5 4 10 13' fill='none' stroke='%23facc15' stroke-width='1'/%3E%3C/svg%3E");
+  /* Efek kaca: sapuan cahaya diagonal + kilau tepi atas, supaya permukaan
+     terbaca sebagai kaca, bukan sekadar panel tembus pandang. */
+  --glass-sheen: rgba(255, 255, 255, .12);
+  --glass-sheen-soft: rgba(255, 255, 255, .04);
+  --glass-sweep: linear-gradient(112deg, var(--glass-sheen) 0%, transparent 38%,
+    transparent 62%, var(--glass-sheen-soft) 100%);
+  /* Kaca diterapkan lewat blur + saturasi, bukan lewat kepekatan. Saturasi
+     menghidupkan warna foto di belakang panel, seperti kaca sungguhan. */
+  --glass-blur: blur(22px) saturate(1.45);
+  --glass-lift: inset 0 1px 0 0 var(--glass-sheen);
+  /* Siluet gurun untuk garis ufuk bawah: pohon kurma dan kafilah unta. */
+  --gurun: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 620 44%27 width=%27620%27 height=%2744%27%3E%3Cpath d=%27M43.0 40 Q118.0 24.0 193.0 40 Z%27 fill=%27%23facc15%27 fill-opacity=%27.22%27/%3E%3Cpath d=%27M296.0 40 Q360.0 28.0 424.0 40 Z%27 fill=%27%23facc15%27 fill-opacity=%27.22%27/%3E%3Cpath d=%27M489.0 40 Q548.0 26.0 607.0 40 Z%27 fill=%27%23facc15%27 fill-opacity=%27.22%27/%3E%3Cpath d=%27M58.0 40.0 C56.0 30.0 57.0 20.0 56.0 10.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%272.2%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M56.0 10.0 C47.0 3.0 40.0 4.0 34.0 9.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.6%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M56.0 10.0 C48.0 0.0 43.0 -4.0 40.0 -8.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.6%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M56.0 10.0 C55.0 -1.0 58.0 -7.0 57.0 -12.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.6%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M56.0 10.0 C62.0 -1.0 67.0 -5.0 71.0 -7.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.6%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M56.0 10.0 C65.0 2.0 72.0 3.0 78.0 7.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.6%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M56.0 10.0 C52.0 7.0 46.0 11.0 42.0 13.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.6%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2755.0%27 cy=%2712.0%27 r=%271.7%27 fill=%27%23facc15%27/%3E%3Ccircle cx=%2758.5%27 cy=%2713.0%27 r=%271.7%27 fill=%27%23facc15%27/%3E%3Cpath d=%27M94.0 40.0 C92.4 31.8 93.2 23.6 92.4 15.4%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.8%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M92.4 15.4 C83.4 8.4 76.4 9.4 70.4 14.4%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.3%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M92.4 15.4 C84.4 5.4 79.4 1.4 76.4 -2.6%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.3%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M92.4 15.4 C91.4 4.4 94.4 -1.6 93.4 -6.6%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.3%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M92.4 15.4 C98.4 4.4 103.4 0.4 107.4 -1.6%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.3%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M92.4 15.4 C101.4 7.4 108.4 8.4 114.4 12.4%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.3%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M92.4 15.4 C88.4 12.4 82.4 16.4 78.4 18.4%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.3%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%2791.4%27 cy=%2717.4%27 r=%271.4%27 fill=%27%23facc15%27/%3E%3Ccircle cx=%2794.9%27 cy=%2718.4%27 r=%271.4%27 fill=%27%23facc15%27/%3E%3Cellipse cx=%27219.0%27 cy=%2731.0%27 rx=%279.0%27 ry=%274.6%27 fill=%27%23facc15%27/%3E%3Cellipse cx=%27219.0%27 cy=%2727.0%27 rx=%275.0%27 ry=%274.4%27 fill=%27%23facc15%27/%3E%3Cpath d=%27M212.0 30.0 C209.0 26.0 209.0 23.0 211.0 22.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%272.6%27 stroke-linecap=%27round%27/%3E%3Cellipse cx=%27210.5%27 cy=%2721.5%27 rx=%272.8%27 ry=%272.1%27 fill=%27%23facc15%27/%3E%3Cpath d=%27M210.0 19.5 l1.0 -2.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.4%27 stroke-linecap=%27round%27/%3E%3Crect x=%27212.0%27 y=%2733.0%27 width=%272.1%27 height=%277.0%27 fill=%27%23facc15%27/%3E%3Crect x=%27216.5%27 y=%2733.0%27 width=%272.1%27 height=%277.0%27 fill=%27%23facc15%27/%3E%3Crect x=%27223.0%27 y=%2733.0%27 width=%272.1%27 height=%277.0%27 fill=%27%23facc15%27/%3E%3Crect x=%27227.0%27 y=%2733.0%27 width=%272.1%27 height=%277.0%27 fill=%27%23facc15%27/%3E%3Cpath d=%27M228.0 30.0 q3.0 1.0 3.0 4.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.6%27 stroke-linecap=%27round%27/%3E%3Cellipse cx=%27264.0%27 cy=%2732.3%27 rx=%277.7%27 ry=%274.0%27 fill=%27%23facc15%27/%3E%3Cellipse cx=%27264.0%27 cy=%2728.8%27 rx=%274.3%27 ry=%273.8%27 fill=%27%23facc15%27/%3E%3Cpath d=%27M258.0 31.4 C255.4 28.0 255.4 25.4 257.2 24.5%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%272.2%27 stroke-linecap=%27round%27/%3E%3Cellipse cx=%27256.7%27 cy=%2724.1%27 rx=%272.4%27 ry=%271.8%27 fill=%27%23facc15%27/%3E%3Cpath d=%27M256.3 22.4 l0.9 -1.7%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.2%27 stroke-linecap=%27round%27/%3E%3Crect x=%27258.0%27 y=%2734.0%27 width=%271.8%27 height=%276.0%27 fill=%27%23facc15%27/%3E%3Crect x=%27261.9%27 y=%2734.0%27 width=%271.8%27 height=%276.0%27 fill=%27%23facc15%27/%3E%3Crect x=%27267.5%27 y=%2734.0%27 width=%271.8%27 height=%276.0%27 fill=%27%23facc15%27/%3E%3Crect x=%27270.9%27 y=%2734.0%27 width=%271.8%27 height=%276.0%27 fill=%27%23facc15%27/%3E%3Cpath d=%27M271.8 31.4 q2.6 0.9 2.6 3.4%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.4%27 stroke-linecap=%27round%27/%3E%3Cellipse cx=%27306.1%27 cy=%2733.5%27 rx=%276.5%27 ry=%273.3%27 fill=%27%23facc15%27/%3E%3Cellipse cx=%27306.1%27 cy=%2730.6%27 rx=%273.6%27 ry=%273.2%27 fill=%27%23facc15%27/%3E%3Cpath d=%27M301.0 32.8 C298.9 29.9 298.9 27.8 300.3 27.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.9%27 stroke-linecap=%27round%27/%3E%3Cellipse cx=%27300.0%27 cy=%2726.7%27 rx=%272.0%27 ry=%271.5%27 fill=%27%23facc15%27/%3E%3Cpath d=%27M299.6 25.2 l0.7 -1.4%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.0%27 stroke-linecap=%27round%27/%3E%3Crect x=%27301.0%27 y=%2735.0%27 width=%271.5%27 height=%275.0%27 fill=%27%23facc15%27/%3E%3Crect x=%27304.3%27 y=%2735.0%27 width=%271.5%27 height=%275.0%27 fill=%27%23facc15%27/%3E%3Crect x=%27309.0%27 y=%2735.0%27 width=%271.5%27 height=%275.0%27 fill=%27%23facc15%27/%3E%3Crect x=%27311.8%27 y=%2735.0%27 width=%271.5%27 height=%275.0%27 fill=%27%23facc15%27/%3E%3Cpath d=%27M312.6 32.8 q2.2 0.7 2.2 2.9%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.2%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M492.0 40.0 C490.2 31.0 491.1 22.0 490.2 13.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%272.0%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M490.2 13.0 C481.2 6.0 474.2 7.0 468.2 12.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.4%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M490.2 13.0 C482.2 3.0 477.2 -1.0 474.2 -5.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.4%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M490.2 13.0 C489.2 2.0 492.2 -4.0 491.2 -9.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.4%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M490.2 13.0 C496.2 2.0 501.2 -2.0 505.2 -4.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.4%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M490.2 13.0 C499.2 5.0 506.2 6.0 512.2 10.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.4%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M490.2 13.0 C486.2 10.0 480.2 14.0 476.2 16.0%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.4%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%27489.2%27 cy=%2715.0%27 r=%271.5%27 fill=%27%23facc15%27/%3E%3Ccircle cx=%27492.7%27 cy=%2716.0%27 r=%271.5%27 fill=%27%23facc15%27/%3E%3Cpath d=%27M526.0 40.0 C524.4 32.2 525.2 24.4 524.4 16.6%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.7%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M524.4 16.6 C515.4 9.6 508.4 10.6 502.4 15.6%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.2%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M524.4 16.6 C516.4 6.6 511.4 2.6 508.4 -1.4%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.2%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M524.4 16.6 C523.4 5.6 526.4 -0.4 525.4 -5.4%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.2%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M524.4 16.6 C530.4 5.6 535.4 1.6 539.4 -0.4%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.2%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M524.4 16.6 C533.4 8.6 540.4 9.6 546.4 13.6%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.2%27 stroke-linecap=%27round%27/%3E%3Cpath d=%27M524.4 16.6 C520.4 13.6 514.4 17.6 510.4 19.6%27 fill=%27none%27 stroke=%27%23facc15%27 stroke-width=%271.2%27 stroke-linecap=%27round%27/%3E%3Ccircle cx=%27523.4%27 cy=%2718.6%27 r=%271.3%27 fill=%27%23facc15%27/%3E%3Ccircle cx=%27526.9%27 cy=%2719.6%27 r=%271.3%27 fill=%27%23facc15%27/%3E%3C/svg%3E");
 }
 
 /* Atribut presentasi SVG tidak bisa memakai var(); gradien didefinisikan
@@ -196,6 +208,38 @@ table { border-collapse: collapse; }
 
 .atmos__aurora { position: absolute; inset: 0; background: var(--aurora); }
 
+/* ------------------------------- siluet gurun ------------------------------ */
+/* Rangkaian kurma dan kafilah unta berjalan di kaki langit, di belakang semua
+   panel kaca sehingga tepi panel tampak membiaskan siluetnya. */
+.atmos__gurun {
+  /* Lebar ubin dihitung dari tinggi lapisan (motif asli 620x44) supaya
+     animasi bisa bergeser tepat satu ubin dan tidak tampak berjahit. */
+  --gurun-h: clamp(140px, 18vh, 210px);
+  --gurun-w: calc(var(--gurun-h) * 14.0909);
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: var(--gurun-h);
+  background-image: var(--gurun);
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  background-size: var(--gurun-w) auto;
+  /* Pencampuran normal, seperti ornamen lain: siluet emas terbaca di tema
+     gelap dan tetap samar di tema fajar yang berlatar terang. */
+  opacity: .26;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 42%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 46%);
+}
+html[data-theme="dawn"] .atmos__gurun { opacity: .32; }
+html[data-photo="on"] .atmos__gurun { opacity: .24; }
+@media (prefers-reduced-motion: no-preference) {
+  /* Kafilah berjalan sangat perlahan, satu ubin per putaran. */
+  .atmos__gurun { animation: gurunJalan 90s linear infinite; }
+}
+@keyframes gurunJalan {
+  from { background-position-x: 0; }
+  to { background-position-x: calc(var(--gurun-w) * -1); }
+}
+
 .atmos__grain {
   position: absolute; inset: -50%;
   opacity: .055;
@@ -250,10 +294,10 @@ html[data-dim="strong"] .atmos__scrim { opacity: 1; }
   position: relative;
   border: 1px solid var(--glass-edge);
   border-radius: var(--r-lg);
-  background: linear-gradient(135deg, var(--glass-a) 0%, var(--glass-b) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: var(--shadow);
+  background: var(--glass-sweep), linear-gradient(135deg, var(--glass-a) 0%, var(--glass-b) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow), var(--glass-lift);
 }
 /* Tenunan bintang-delapan di sudut panel, samar seperti ukiran dinding masjid.
    Dibiarkan sangat pudar agar tidak mengganggu angka jadwal di atasnya. */
@@ -476,8 +520,10 @@ html[data-theme="dawn"] .topbar__mark .mark { background: #fffdf7; }
   padding: clamp(20px, 2.2vw, 30px);
   display: flex; flex-direction: column; gap: 14px;
   background:
+    var(--glass-sweep),
     linear-gradient(180deg, rgba(250, 204, 21, .12), transparent 60%),
-    linear-gradient(135deg, rgba(var(--panel-rgb), .86) 0%, rgba(var(--panel-rgb), .95) 100%);
+    linear-gradient(135deg, rgba(var(--panel-rgb), .78) 0%, rgba(var(--panel-rgb), .80) 100%);
+  box-shadow: var(--glass-lift);
 }
 .nextup__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .nextup__kicker {
@@ -538,8 +584,10 @@ html[data-theme="dawn"] .topbar__mark .mark { background: #fffdf7; }
   padding: clamp(20px, 2.4vw, 32px);
   text-align: center;
   background:
+    var(--glass-sweep),
     radial-gradient(120% 90% at 50% 0%, rgba(250, 204, 21, .1), transparent 62%),
-    linear-gradient(135deg, rgba(var(--panel-rgb), .86) 0%, rgba(var(--panel-rgb), .95) 100%);
+    linear-gradient(135deg, rgba(var(--panel-rgb), .78) 0%, rgba(var(--panel-rgb), .80) 100%);
+  box-shadow: var(--glass-lift);
 }
 .clockface__zone {
   font-size: .66rem; letter-spacing: .24em; text-transform: uppercase;
@@ -643,6 +691,14 @@ html[data-theme="dawn"] .topbar__mark .mark { background: #fffdf7; }
   fill: var(--txt-3); font-family: var(--mono);
   font-size: 9px; letter-spacing: .18em;
 }
+/* Siluet gurun di garis ufuk busur, memudar ke atas agar menyatu langit. */
+.arc__desert {
+  opacity: .5;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, .35) 0%, #000 30%);
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, .35) 0%, #000 30%);
+  pointer-events: none;
+}
+html[data-theme="dawn"] .arc__desert { opacity: .62; }
 .arc__sun-core { fill: var(--gold-2); filter: drop-shadow(0 0 8px var(--glow)); }
 .arc__sun { transition: transform .9s var(--ease); }
 .arc-mark__dot { fill: var(--gold-2); }
@@ -671,10 +727,11 @@ html[data-theme="dawn"] .topbar__mark .mark { background: #fffdf7; }
   border: 1px solid var(--line-soft);
   /* Kubah dangkal di tepi atas, seperti kepala lengkung pintu masjid. */
   border-radius: var(--arch-top);
-  background: linear-gradient(135deg, rgba(var(--panel-rgb), .84) 0%, rgba(var(--panel-rgb), .95) 100%);
-  backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
-  box-shadow: var(--shadow);
+  background: var(--glass-sweep),
+    linear-gradient(135deg, rgba(var(--panel-rgb), .78) 0%, rgba(var(--panel-rgb), .80) 100%);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow), var(--glass-lift);
   padding: 26px 14px 16px;
   display: flex; flex-direction: column; gap: 3px;
   overflow: hidden;
@@ -737,9 +794,10 @@ html[data-theme="dawn"] .topbar__mark .mark { background: #fffdf7; }
 .stop--next {
   border-color: var(--line-strong);
   background:
+    var(--glass-sweep),
     linear-gradient(180deg, rgba(250, 204, 21, .1), transparent 70%),
-    linear-gradient(135deg, rgba(var(--panel-rgb), .88) 0%, rgba(var(--panel-rgb), .98) 100%);
-  box-shadow: var(--shadow), 0 0 22px -6px var(--glow);
+    linear-gradient(135deg, rgba(var(--panel-rgb), .82) 0%, rgba(var(--panel-rgb), .84) 100%);
+  box-shadow: var(--shadow), 0 0 22px -6px var(--glow), var(--glass-lift);
 }
 .stop--next .stop__state { color: var(--ink-gold); }
 .stop--next .stop__fill { background: var(--gold-1); }
@@ -747,8 +805,9 @@ html[data-theme="dawn"] .topbar__mark .mark { background: #fffdf7; }
 .stop--now {
   border: 2px solid var(--gold-2);
   background:
-    linear-gradient(135deg, rgba(250, 204, 21, .26) 0%, rgba(var(--panel-rgb), .96) 78%);
-  box-shadow: 0 0 28px -4px var(--glow), var(--shadow);
+    var(--glass-sweep),
+    linear-gradient(135deg, rgba(250, 204, 21, .26) 0%, rgba(var(--panel-rgb), .84) 78%);
+  box-shadow: 0 0 28px -4px var(--glow), var(--shadow), var(--glass-lift);
 }
 .stop--now .stop__state { color: var(--live); }
 .stop--now .stop__ar { opacity: 1; }

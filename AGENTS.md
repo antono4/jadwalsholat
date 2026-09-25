@@ -112,6 +112,16 @@ Tetap tiga tema; jangan menambah tema keempat.
 - Ornamen: `--ornamen` (bintang-delapan) sebagai tenunan samar pada permukaan, dan
   `--muqarnas` (deret lengkung) sebagai pemisah bagian. Di `display.html` keduanya
   ditulis sebagai data-URI langsung karena berkas itu mandiri tanpa `styles.css`.
+- Ornamen gurun: `--gurun` (bukit pasir, pohon kurma, kafilah unta) membentuk siluet
+  ufuk. Dipakai dua tempat: `<image class="arc__desert">` di dalam SVG busur matahari
+  — duduk di garis ufuk `y=214` dan menyatu lewat `mask-image` yang memudar ke atas —
+  dan `.atmos__gurun` sebagai pita kabut ufuk di kaki layar. Bukit di `gurun.py`
+  sengaja dibuat terpisah dan tidak rata supaya bacaannya bukan garis horizontal.
+- Efek kaca: token `--glass-sweep`, `--glass-edge`, `--glass-blur`, `--glass-lift`.
+  Sapuan cahaya (`linear-gradient` 112deg) dan garis kilau atas dipasang di
+  `.card-surface`, `.nextup`, `.stop`, `.topbar`, serta `.glass-panel`/`.glass-card`
+  di `display.html`. Alfa panel 0,80/0,78/0,80 dipilih agar kaca tetap terlihat
+  namun kontras teks tetap lolos ambang; `glass_test.py` mengunci hasil ini.
 - Kepala lengkung: `--arch-lg`/`--arch-sm` untuk potongan kecil (lambang, bingkai jam),
   dan `--arch-top` untuk kartu rel waktu. `--arch-top` sengaja berbentuk **kubah
   dangkal** (`48% 48% … / 22px …`), bukan setengah lingkaran: atap penuh memangkas
